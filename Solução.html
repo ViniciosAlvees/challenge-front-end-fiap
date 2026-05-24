@@ -1,65 +1,139 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
-    <title>Soul UP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+    <title>Soul Up - A Solução</title>
+    <style>
+        .solucao-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 0.875rem;
+            margin-top: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .solucao-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .solucao-card:hover {
+            border-color: var(--accent-dim);
+            transform: translateY(-1px);
+        }
+
+        .solucao-card h2 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .solucao-card p {
+            font-size: 0.9rem;
+            margin-bottom: 0;
+        }
+
+        .challenge-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .challenge-tag {
+            background: var(--accent-glow);
+            border: 1px solid var(--accent-dim);
+            border-radius: 6px;
+            padding: 0.3rem 0.75rem;
+            font-size: 0.8rem;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .page-title {
+            font-family: var(--font-display);
+            font-size: clamp(1.8rem, 4vw, 2.4rem);
+            font-weight: 800;
+            color: var(--accent);
+            letter-spacing: -0.04em;
+            margin-bottom: 0.4rem;
+        }
+
+        .page-subtitle {
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            font-size: 0.95rem;
+        }
+    </style>
 </head>
 
 <body>
 
-<h1>Soul UP</h1>
+    <header>
+        <h1>Soul Up</h1>
+        <nav>
+            <a href="./index.html">Home</a>
+            <a href="./sobre.html">Sobre</a>
+            <a href="./integrantes.html">Integrantes</a>
+            <a href="./contato.html">Contato</a>
+            <a href="./faq.html">FAQ</a>
+        </nav>
+    </header>
 
-<h2>Sobre a Solução</h2>
+    <main>
+        <h1 class="page-title">Soul UP</h1>
+        <p class="page-subtitle">Soul UP transforma sustentabilidade em uma experiência social e colaborativa.</p>
 
-<p>
-Soul UP transforma sustentabilidade em uma experiência social e colaborativa.
-</p>
+        <div class="solucao-grid">
+            <div class="solucao-card">
+                <h2>Funcionamento</h2>
+                <p>Usuários criam grupos e participam de desafios sustentáveis.</p>
+            </div>
+            <div class="solucao-card">
+                <h2>Avatar Inteligente</h2>
+                <p>O avatar acompanha grupos e cria desafios personalizados.</p>
+            </div>
+            <div class="solucao-card">
+                <h2>Objetivo</h2>
+                <p>Promover ações sustentáveis através da tecnologia e interação social.</p>
+            </div>
+            <div class="solucao-card">
+                <h2>Impacto Ambiental</h2>
+                <p>A plataforma incentiva pequenas ações diárias que contribuem para a preservação do meio ambiente e conscientização coletiva.</p>
+            </div>
+            <div class="solucao-card">
+                <h2>Sistema de Pontuação</h2>
+                <p>Usuários recebem pontos pelas atividades realizadas.</p>
+            </div>
+            <div class="solucao-card">
+                <h2>Validação por Proximidade</h2>
+                <p>Usuários próximos podem confirmar desafios realizados.</p>
+            </div>
+            <div class="solucao-card">
+                <h2>Gamificação</h2>
+                <p>Ranking e recompensas incentivam participação dos usuários.</p>
+            </div>
+        </div>
 
-<h2>Funcionamento</h2>
+        <h2>Desafios Sustentáveis</h2>
+        <div class="challenge-list">
+            <span class="challenge-tag">♻️ Reciclagem</span>
+            <span class="challenge-tag">🧹 Limpeza de Praças</span>
+            <span class="challenge-tag">⚡ Economia de Energia</span>
+            <span class="challenge-tag">🌱 Plantio de Árvores</span>
+        </div>
+    </main>
 
-<p>
-Usuários criam grupos e participam de desafios sustentáveis.
-</p>
-<h2>Avatar Inteligente</h2>
-
-<p>
-O avatar acompanha grupos e cria desafios personalizados.
-</p>
+    <footer>
+        <p>&copy; 2026 - Soul Up - Projeto Acadêmico ADS</p>
+    </footer>
 </body>
-<h2>Objetivo</h2>
-
-<p>
-Promover ações sustentáveis através da tecnologia e interação social.
-</p>
-<h2>Impacto Ambiental</h2>
-
-<p>
-A plataforma incentiva pequenas ações diárias que contribuem
-para a preservação do meio ambiente e conscientização coletiva.
-</p>
-
-<h2>Desafios Sustentáveis</h2>
-<ul>
-<li>Reciclagem</li>
-<li>Limpeza de Praças</li>
-<li>Economia de Energia</li>
-<li>Plantio de Árvores</li>
-</ul>
- 
-<h2>Sistema de Pontuação</h2>
-<p>
-Usuários recebem pontos pelas atividades realizadas.
-</p>
-
-<h2>Validação por Proximidade</h2>
-<p>
-Usuários próximos podem confirmar desafios realizados.
-</p>
-
-<h2>Gamificação</h2>
-<p>
-Ranking e recompensas incentivam participação dos usuários.
-</p>
-
 </html>
