@@ -76,4 +76,4 @@ solucao_avatar.html      # Apresentação do ecossistema inteligente e gamificad
 Solução.html             # detalhamento de negócios e pilares de sustentabilidade
 
 
-2026 Soul Up — Enterprise Challenge — FIAP - Análise e Desenvolvimento de Sistemas.
+2026 - Nexus Elite — FIAP - Análise e Desenvolvimento de Sistemas.
