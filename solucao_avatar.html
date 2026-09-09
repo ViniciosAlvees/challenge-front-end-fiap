@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="../challenge-front-end-fiap/icon/souldup.png">
+    <link rel="icon" type="image/png" href="./icon/souldup.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="./avatar.css" />
     <title>Soul Up - Nossa Solução</title>
@@ -56,53 +56,124 @@
     </main>
 
    
-  </body>
-    <div style="background-color: #f4f9f4; border: 2px solid #5cb85c; padding: 20px; border-radius: 8px; margin: 20px 0; font-family: sans-serif;">
+ <div id="avatar-simulador" style="background-color: #f4f9f4; border: 2px solid #5cb85c; padding: 20px; border-radius: 8px; margin: 20px 0; font-family: sans-serif;">
     <h3 style="color: #2e7d32; margin-top: 0;">🤖 Simulador Interativo do Avatar (Soul Up)</h3>
     <p>Escolha uma ação para simular o comportamento do Avatar:</p>
-    
-    <button onclick="simularAcao('EXECUCAO_GRUPO')" style="background-color: #4CAF50; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin-right: 10px;">
-        1. Grupo Conclui Desafio
-    </button>
-    
-    <button onclick="simularAcao('EVIDENCIA_REPORTE')" style="background-color: #008CBA; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin-right: 10px;">
-        2. Usuário Envia Foto
-    </button>
-    
-    <button onclick="simularAcao('VALIDACAO_COMUNITARIA')" style="background-color: #f44336; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">
-        3. Validação Externa
-    </button>
 
-    <div id="painel-avatar" style="margin-top: 15px; padding: 10px; background-color: #ffffff; border: 1px dashed #ccc; min-height: 40px; color: #333; font-weight: bold;">
-        Aguardando comando do Avatar...
+    <div id="etapa-1" class="etapa-avatar">
+        <button onclick="confirmarEtapa1()" style="background-color: #4CAF50; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+            1. Grupo Conclui Desafio
+        </button>
+    </div>
+
+    <div id="etapa-2" class="etapa-avatar" style="display:none;">
+        <div style="margin-bottom: 10px;">
+            <label for="input-imagem-avatar" style="display:block; margin-bottom:8px; color:#333;">2. Usuário Envia a Imagem</label>
+            <input type="file" id="input-imagem-avatar" accept="image/*" style="margin-bottom: 10px; display:block;">
+        </div>
+
+        <button onclick="confirmarEtapa2()" style="background-color: #008CBA; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">
+            Enviar Imagem
+        </button>
+    </div>
+
+    <div id="etapa-3" class="etapa-avatar" style="display:none;">
+        <div style="color:#f44336; margin-bottom: 6px;">3. Validação Externa</div>
+    </div>
+
+    <div id="painel-avatar" style="margin-top: 15px; padding: 10px; background-color: #ffffff; border: 1px dashed #ccc; min-height: 40px; color: #333; font-weight: bold; display:flex; align-items:center; gap:10px;">
+        <span id="painel-avatar-texto">Aguardando comando do Avatar...</span>
     </div>
 </div>
 
-<script>
-function simularAcao(tipoAcao) {
-    var painel = document.getElementById("painel-avatar");
-    
-    switch(tipoAcao) {
-        case 'EXECUCAO_GRUPO':
-            painel.style.color = "#4CAF50";
-            painel.innerHTML = " Desafio Aprovado! O grupo 'Nexus Elite' recebeu 100 pontos .";
-            break;
-            
-        case 'EVIDENCIA_REPORTE':
-            painel.style.color = "#008CBA";
-            painel.innerHTML = " Foto enviada com sucesso! Bônus de +20 pontos.";
-            break;
-            
-        case 'VALIDACAO_COMUNITARIA':
-            painel.style.color = "#f44336";
-            painel.innerHTML = "Um usuário externo validou a atividade. +15 pontos computados para o validador.";
-            break;
-            
-        default:
-            painel.innerHTML = "Aguardando comando do Avatar...";
-    }
+<style>
+#avatar-simulador .etapa-avatar {
+    transition: opacity 0.35s ease;
+    opacity: 1;
 }
+#avatar-simulador .etapa-avatar.saindo {
+    opacity: 0;
+}
+#avatar-simulador .spinner-avatar {
+    width: 16px;
+    height: 16px;
+    border: 3px solid #ddd;
+    border-top-color: #008CBA;
+    border-radius: 50%;
+    animation: girar-avatar 0.8s linear infinite;
+    flex-shrink: 0;
+}
+@keyframes girar-avatar {
+    to { transform: rotate(360deg); }
+}
+</style>
+
+<script>
+(function() {
+    var pontosAcumulados = 0; // pontuação só é somada/computada ao final do fluxo
+
+    var painelTexto = document.getElementById("painel-avatar-texto");
+    var etapa1 = document.getElementById("etapa-1");
+    var etapa2 = document.getElementById("etapa-2");
+    var etapa3 = document.getElementById("etapa-3");
+
+    function trocarEtapa(etapaAtual, etapaProxima, callback) {
+        etapaAtual.classList.add("saindo");
+        setTimeout(function() {
+            etapaAtual.style.display = "none";
+            etapaAtual.classList.remove("saindo");
+            if (etapaProxima) {
+                etapaProxima.style.display = "block";
+            }
+            if (callback) callback();
+        }, 350);
+    }
+
+    window.confirmarEtapa1 = function() {
+        pontosAcumulados += 100; // pontos do desafio em grupo (ainda não exibidos)
+        painelTexto.innerHTML = "Desafio aprovado pela Soul Up. Prossiga enviando a evidência.";
+        trocarEtapa(etapa1, etapa2);
+    };
+
+    window.confirmarEtapa2 = function() {
+        var input = document.getElementById("input-imagem-avatar");
+        if (!input.files || input.files.length === 0) {
+            painelTexto.innerHTML = "Selecione uma imagem antes de enviar.";
+            return;
+        }
+
+        pontosAcumulados += 20; // bônus pela evidência enviada
+
+        painelTexto.innerHTML = '<span class="spinner-avatar"></span> Enviando imagem e iniciando validação...';
+
+        trocarEtapa(etapa2, etapa3, function() {
+            // Simula o tempo de validação externa
+            setTimeout(function() {
+                painelTexto.innerHTML = '<span class="spinner-avatar"></span> Validando externamente...';
+
+                setTimeout(function() {
+                    pontosAcumulados += 15; // pontos da validação externa
+                    etapa3.innerHTML = '<div style="color:#f44336; margin-bottom: 6px;">3. Validação Externa concluída ✔</div>';
+                    painelTexto.innerHTML = "Tudo certo! Pontuação total computada: " + pontosAcumulados + " pontos.";
+                }, 1800);
+            }, 300);
+        });
+    };
+})();
 </script>
+
+  </body>
+
+  <nav style="margin-top: 2.5rem;">
+      <p><h3>Outros assuntos</h3></p>
+      <ul>
+          <li><a href="./index.html">Home</a></li>
+          <li><a href="./integrantes.html">Integrantes</a></li>
+          <li><a href="./faq.html">Suporte</a></li>
+          <li><a href="./contato.html">Contato</a></li>
+          <li><a href="./sobre.html">Sobre</a></li>
+      </ul>
+  </nav>
  <footer>
       <p>&copy; 2026 - Nexus Elite</p>
   </footer>
