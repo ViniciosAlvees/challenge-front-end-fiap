@@ -1,33 +1,45 @@
-.page-intro {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    margin-bottom: 2.5rem;
+/* Adicionar ao final de sobre_nos.css — mantém tudo que já existe, só soma estas classes */
+
+.hero-intro {
+    max-width: 720px;
+    margin: 0 auto 1rem;
+    text-align: center;
+}
+
+.pilar {
     border-left: 2px solid var(--accent-dim);
-    padding-left: 0.85rem;
+    padding-left: 1rem;
+    margin: 1.25rem 0;
 }
 
-.sobre-section {
-    margin-bottom: 2.5rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    transition: border-color 0.22s;
+.pilar h3 {
+    font-size: 1rem;
+    margin-bottom: 0.4rem;
 }
 
-.sobre-section:hover {
-    border-color: var(--accent-dim);
-}
-
-.sobre-section h2 {
-    font-size: 1.2rem;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.6rem;
-    border-bottom: 1px solid var(--border);
-}
-
-.sobre-section p {
+.pilar p {
     font-size: 0.93rem;
     line-height: 1.7;
     margin-bottom: 0;
+}
+
+.problem-list {
+    margin: 1rem 0 0;
+    padding-left: 1.25rem;
+    font-size: 0.93rem;
+    line-height: 1.7;
+}
+
+.problem-list li {
+    margin-bottom: 0.5rem;
+}
+
+.aviso-legal {
+    background: var(--surface);
+    border: 1px solid var(--accent-dim);
+    border-radius: var(--radius);
+    padding: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-top: 1rem;
 }
