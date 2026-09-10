@@ -6,102 +6,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="./icon/souldup.png">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/index.css">
     <title>Soul Up - Home</title>
-    <style>
-        header {
-            height: auto;
-            min-height: 62px;
-        }
-
-        .hero {
-            padding: 5rem 2rem 4rem;
-            max-width: 880px;
-            margin: 0 auto;
-        }
-
-        .hero-label {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--accent);
-            background: var(--accent-glow);
-            border: 1px solid var(--accent-dim);
-            border-radius: 4px;
-            padding: 0.2rem 0.65rem;
-            margin-bottom: 1.25rem;
-        }
-
-        .hero h2 {
-            font-size: clamp(2rem, 5vw, 3rem);
-            font-weight: 800;
-            line-height: 1.1;
-            letter-spacing: -0.04em;
-            color: var(--text);
-            margin-bottom: 1.25rem;
-        }
-
-        .hero h2 span {
-            color: var(--accent);
-        }
-
-        .hero p {
-            font-size: 1.05rem;
-            max-width: 540px;
-            line-height: 1.7;
-            margin-bottom: 2rem;
-        }
-
-        .hero blockquote {
-            border-left: 2px solid var(--accent-dim);
-            padding-left: 1rem;
-            color: var(--text-muted);
-            font-style: italic;
-            font-size: 0.95rem;
-            max-width: 500px;
-        }
-
-        .nav-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 0.75rem;
-            padding: 0 2rem 4rem;
-            max-width: 880px;
-            margin: 0 auto;
-        }
-
-        .nav-card {
-            display: block;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 1.1rem 1.25rem;
-            text-decoration: none;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: border-color 0.2s, color 0.2s, transform 0.2s;
-        }
-
-        .nav-card:hover {
-            border-color: var(--accent-dim);
-            color: var(--accent);
-            transform: translateY(-2px);
-            opacity: 1;
-        }
-
-        .nav-card span {
-            display: block;
-            font-size: 1.3rem;
-            margin-bottom: 0.5rem;
-        }
-    </style>
 </head>
 
 <body>
+
+    <!-- Fundo decorativo com transparência: folhas/curvas orgânicas usando as cores do tema -->
+    <div class="bg-decor" aria-hidden="true">
+        <svg viewBox="0 0 1440 1024" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="bgFade" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--accent-dim)" stop-opacity="0.08" />
+                    <stop offset="100%" stop-color="var(--accent-dim)" stop-opacity="0" />
+                </linearGradient>
+            </defs>
+
+            <rect width="1440" height="1024" fill="url(#bgFade)" />
+
+            <!-- folhas grandes espalhadas, bem sutis -->
+            <g fill="var(--accent)" opacity="0.05">
+                <path d="M120,80 C60,140 60,240 140,280 C220,240 220,140 120,80 Z" />
+                <path d="M1300,60 C1230,110 1230,210 1310,250 C1390,210 1390,110 1300,60 Z" />
+                <path d="M1220,700 C1140,750 1140,870 1240,910 C1340,870 1340,750 1220,700 Z" />
+                <path d="M60,760 C-10,810 -10,920 80,960 C170,920 170,810 60,760 Z" />
+            </g>
+
+            <!-- círculos flutuantes, ainda mais discretos -->
+            <g fill="var(--accent)" opacity="0.06">
+                <circle cx="700" cy="150" r="70" />
+                <circle cx="1050" cy="480" r="110" />
+                <circle cx="300" cy="560" r="90" />
+                <circle cx="900" cy="880" r="60" />
+            </g>
+
+            <!-- linhas orgânicas conectando os elementos, tipo "trilhas" -->
+            <g stroke="var(--accent-dim)" stroke-width="1.5" fill="none" opacity="0.15">
+                <path d="M0,300 C300,250 500,400 800,320 C1000,270 1200,350 1440,300" />
+                <path d="M0,650 C250,600 550,720 850,650 C1100,600 1300,680 1440,640" />
+            </g>
+        </svg>
+    </div>
 
     <header>
         <h1><img width="10%" height="auto" src="./icon/souldup.png" alt="logo" class="logo">
