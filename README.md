@@ -42,18 +42,19 @@ CHALLENGE-FRONT-END-FIAP/
 
 assets                  # Fotografia de identificação dos integrantes do grupo
 
-alvez.jpeg
-bryan.jpeg
-enzo.jpeg
-raphael.jpeg
-victor.jpeg
+alvez.png
+bryan.png
+enzo.png
+raphael.png
+victor.png
 
 
 css                     # Folhas de estilo modulares (CSS3)
 
 avatar.css        
 contato.css         
-faq.css              
+faq.css  
+index.css
 integrantes.css      
 sobre nos.css        
 style.css            
@@ -66,6 +67,7 @@ icone-github-verte.png
 image.png
 linkedin.png
 mail-1454732_640.png
+souldup.png
 
 contato.html             # Página com canais de atendimento e suporte 24h
 faq.html                 # Central de dúvidas e respostas frequentes da plataforma
@@ -73,7 +75,11 @@ index.html               # Landing page principal e portal de entrada da Soul Up
 integrantes.html         # Portfólio dos desenvolvedores do projeto
 read.me                  # Documentação detalhada do repositório (este arquivo)
 solucao_avatar.html      # Apresentação do ecossistema inteligente e gamificado
-Solução.html             # detalhamento de negócios e pilares de sustentabilidade
+Solução.html     
+sobre.html
+
+
+# detalhamento de negócios e pilares de sustentabilidade
 
 
 2026 - Nexus Elite — FIAP - Análise e Desenvolvimento de Sistemas.
