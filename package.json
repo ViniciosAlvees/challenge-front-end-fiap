@@ -1,0 +1,24 @@
+{
+  "name": "challenge-front-end-fiap",
+  "version": "1.0.0",
+  "description": "Este documento foi estruturado seguindo os critérios passados pelo projetos, Challenger ADS",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alvesdemacedoenzo-beep/challenge-front-end-fiap.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/alvesdemacedoenzo-beep/challenge-front-end-fiap/issues"
+  },
+  "homepage": "https://github.com/alvesdemacedoenzo-beep/challenge-front-end-fiap#readme",
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}
