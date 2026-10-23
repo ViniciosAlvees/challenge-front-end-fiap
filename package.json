@@ -1,24 +1,26 @@
 {
-  "name": "challenge-front-end-fiap",
+  "name": "soul-up",
+  "private": true,
   "version": "1.0.0",
-  "description": "Este documento foi estruturado seguindo os critérios passados pelo projetos, Challenger ADS",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/alvesdemacedoenzo-beep/challenge-front-end-fiap.git"
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-hook-form": "^7.65.0",
+    "react-router-dom": "^7.9.0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/alvesdemacedoenzo-beep/challenge-front-end-fiap/issues"
-  },
-  "homepage": "https://github.com/alvesdemacedoenzo-beep/challenge-front-end-fiap#readme",
   "devDependencies": {
-    "typescript": "^7.0.2"
+    "@tailwindcss/vite": "^4.1.16",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.0.4",
+    "tailwindcss": "^4.1.16",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1"
   }
 }

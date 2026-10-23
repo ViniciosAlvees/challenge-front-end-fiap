@@ -1,85 +1,95 @@
-Este documento foi estruturado seguindo os critérios passados pelo projetos, Challenger ADS
+# Soul Up — sustentabilidade em comunidade
 
-# Nome da marca:  Soul Up - Gamificação & Sustentabilidade
+A Soul Up é uma proposta de rede social sustentável que transforma ações ambientais em experiências sociais e coletivas. A plataforma organiza desafios, grupos, evidências, validação comunitária e reconhecimento para aproximar as pessoas do impacto positivo.
 
-Uma plataforma desenvolvida para dar conscientização ambiental e as ações ecológicas.
+![Logo Soul Up](./public/icon/souldup.png)
 
+## Tecnologias
 
-# Conceito do Site e Proposta de Valor
+- React 19 e Vite
+- TypeScript
+- Tailwind CSS 4
+- React Router DOM
+- React Hook Form
+- Fetch API nativa para a camada de integração REST
+- Git e GitHub
 
-A Soul Up foi feita para preencher a lacuna entre a alta conscientização ambiental do público jovem, adulto ou até  crianças. A falta de ações práticas e reais no dia a dia. Ela coloca o usuário inserindo-o em uma comunidade ativa estruturada em três pilares práticos:
+Não são usados Axios ou frameworks externos de UI. A API Java da equipe ainda não foi publicada; a integração real depende do envio da URL e do contrato dos endpoints.
+Os dados da equipe usam interfaces TypeScript compostas por intersection types; a simulação do Avatar usa union types.
 
-1. Gamificação da Realidade: O cuidado com o meio ambiente passa a funcionar como um RPG da vida real. Os usuários se unem em missões locais, como mutirões de limpeza em parques (tipo um pokemon go), gincanas de reciclagem em bairros específicos ou plantio de mudas urbanas.
-2. Engajamento Comunitário: Parcerias com subprefeituras, ONGs locais e coletivos de bairro alimentam o aplicativo com eventos reais.
-3. Recompensas é benéficios: O cumprimento de metas e o descarte correto de resíduos geram pontos digitais que podem ser convertidos em benefícios reais, criando um incentivo financeiro e social em parceria com o comércio local.
+## Páginas e recursos
 
+- Início: apresentação e acesso rápido às áreas do projeto.
+- Sobre: problema, proposta, pilares, jornada, inovação e oportunidades de capacitação.
+- Solução: frentes da proposta e páginas dinâmicas de detalhes em `/solucao/:slug`.
+- Avatar: explicação e simulador interativo de desafio, envio local de evidência e validação.
+- Integrantes: nomes, RMs, fotos e perfis profissionais da equipe.
+- FAQ: perguntas e respostas em acordeão.
+- Contato: formulário tipado com validação de nome, e-mail, assunto e mensagem.
 
-# O Papel do Avatar (IA)
+O formulário e o simulador são demonstrações locais. Os dados preenchidos e as imagens selecionadas não são enviados nem armazenados. A camada tipada de integração em `src/services/api.ts` já oferece `fetch` para GET, POST, PUT, PATCH e DELETE, com tratamento de respostas HTTP e erros. As páginas ainda não consomem dados remotos: os endpoints Java não foram fornecidos/publicados.
 
-O avatar atua diretamente como o mestre do jogo e mentor do sistema. Ele aplica um questionário inicial para entender as preferências da pessoa (reciclagem, limpeza ou economia) e dispara os em ideais para o perfil através de notificações push personalizadas, gerenciando o algoritmo de pontos.
+## Como executar
 
+Requisitos: Node.js 20.19+ ou 22.12+ e npm.
 
-# Validação Comunitária e Monitoramento de Segurança
+```bash
+npm install
+npm run dev
+```
 
-Validação por Proximidade: Para evitar fraudes nas fotos ou relatórios enviados, pessoas da comunidade e validadores externos analisam o local e confirmam se a ação foi verídica ou não. Também é verificado se a pessoa está em um local de perigo ou não.
-Cuidado com o Usuário: A segurança de quem está em campo é monitorada através do clima e da geolocalização, funcionando como um sistema de alerta caso o usuário se encontre em uma zona de risco ou em áreas com temporais iminentes, obras, tempestades e etc.
+Para configurar a API quando a equipe enviar o endereço publicado, copie `.env.example` para `.env.local` e preencha `VITE_API_BASE_URL`. Reinicie o servidor de desenvolvimento após alterar variáveis de ambiente. Não coloque tokens ou credenciais em variáveis `VITE_*`, pois elas ficam acessíveis no navegador.
 
+Para validar a versão de produção:
 
-# Integrantes do Projeto
+```bash
+npm run build
+npm run preview
+```
 
-Raphael Ferreira Tavares — RM 569767
-Bryan Germano — RM 569716
-Enzo Macedo — RM 569427
-Victor Hugo Velasco Guzman — RM 573173
-Vinicios Alves — RM 573002
+O `vercel.json` configura o fallback necessário para abrir diretamente as rotas da SPA em produção. A implantação pública ainda está pendente.
 
+## Estrutura do projeto
 
-# Estrutura de Arquivos (Diretórios)
+```text
+.
+├── public/
+│   └── icon/                # Marca e ícones
+├── src/
+│   ├── assets/team/         # Fotos da equipe processadas pelo Vite
+│   ├── components/          # Layout e componentes reutilizáveis
+│   ├── data/                # Conteúdo tipado da aplicação
+│   ├── pages/               # Páginas e rotas da SPA
+│   ├── services/            # Camada tipada de acesso à API
+│   ├── App.tsx              # Rotas React Router
+│   ├── index.css            # Tailwind CSS e tema
+│   └── main.tsx             # Entrada React
+├── index.html
+├── vercel.json
+├── package.json
+├── tsconfig*.json
+└── vite.config.ts
+```
 
-HTML/CSS
+## Repositório, API, deploy e apresentação
 
-CHALLENGE-FRONT-END-FIAP/
+- GitHub: [alvesdemacedoenzo-beep/challenge-front-end-fiap](https://github.com/alvesdemacedoenzo-beep/challenge-front-end-fiap)
+- API Java publicada: **pendente de publicação e envio da URL e documentação pela equipe.**
+- Aplicação na Vercel: **pendente de implantação e envio da URL pela equipe.**
+- Vídeo de apresentação (até 3 minutos): **link do YouTube pendente de envio pela equipe.**
 
-assets                  # Fotografia de identificação dos integrantes do grupo
+## Integrantes
 
-alvez.png
-bryan.png
-enzo.png
-raphael.png
-victor.png
+| Integrante | RM | Foto | LinkedIn | GitHub |
+|---|---:|---|---|---|
+| Raphael Ferreira Tavares | 569767 · 1TDSPY | ![Raphael](./src/assets/team/raphael.png) | [Perfil](https://www.linkedin.com/in/raphael-ferreira-0111323b8/) | [raph-ferreira](https://github.com/raph-ferreira) |
+| Bryan Germano | 569716 · 1TDSPY | ![Bryan](./src/assets/team/bryan.png) | [Perfil](https://www.linkedin.com/in/bryan-germano-84016729b/) | [BryanGermano](https://github.com/BryanGermano) |
+| Enzo Macedo | 569427 · 1TDSPY | ![Enzo](./src/assets/team/enzo.png) | [Perfil](https://www.linkedin.com/in/enzo-alves-de-macedo-408359356/) | [alvesdemacedoenzo-beep](https://github.com/alvesdemacedoenzo-beep) |
+| Victor Hugo Velasco Guzman | 573173 · 1TDSPY | ![Victor](./src/assets/team/victor.png) | [Perfil](https://www.linkedin.com/in/victor-hugo-velasco-guzman-296256235/) | [velascoguzmanvictorhugo-ui](https://github.com/velascoguzmanvictorhugo-ui) |
+| Vinicios Alves | 573002 · 1TDSPY | ![Vinicios](./src/assets/team/vinicios.png) | [Perfil](https://www.linkedin.com/in/vinicios-alves-dos-santos-434128327/) | [ViniciosAlvees](https://github.com/ViniciosAlvees) |
 
+## Contato
 
-css                     # Folhas de estilo modulares (CSS3)
+Para dúvidas sobre o projeto, entre em contato com a equipe pelos perfis vinculados acima ou pelo e-mail [soulup@gmail.com](mailto:soulup@gmail.com).
 
-avatar.css        
-contato.css         
-faq.css  
-index.css
-integrantes.css      
-sobre nos.css        
-style.css            
-
-
-icon                    # Elementos gráficos e de navegação externa
-
-Google_Maps_icon_(2026).svg.png
-icone-github-verte.png
-image.png
-linkedin.png
-mail-1454732_640.png
-souldup.png
-
-contato.html             # Página com canais de atendimento e suporte 24h
-faq.html                 # Central de dúvidas e respostas frequentes da plataforma
-index.html               # Landing page principal e portal de entrada da Soul Up
-integrantes.html         # Portfólio dos desenvolvedores do projeto
-read.me                  # Documentação detalhada do repositório (este arquivo)
-solucao_avatar.html      # Apresentação do ecossistema inteligente e gamificado
-Solução.html     
-sobre.html
-
-
-# detalhamento de negócios e pilares de sustentabilidade
-
-
-2026 - Nexus Elite — FIAP - Análise e Desenvolvimento de Sistemas.
+© 2026 — Nexus Elite · FIAP — Análise e Desenvolvimento de Sistemas.
