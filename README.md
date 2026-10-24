@@ -23,11 +23,12 @@ Os dados da equipe usam interfaces TypeScript compostas por intersection types; 
 - Sobre: problema, proposta, pilares, jornada, inovação e oportunidades de capacitação.
 - Solução: frentes da proposta e páginas dinâmicas de detalhes em `/solucao/:slug`.
 - Avatar: explicação e simulador interativo de desafio, envio local de evidência e validação.
+- Cadastro: formulários independentes para cadastrar e listar usuários e grupos.
 - Integrantes: nomes, RMs, fotos e perfis profissionais da equipe.
 - FAQ: perguntas e respostas em acordeão.
 - Contato: formulário tipado com validação de nome, e-mail, assunto e mensagem.
 
-O formulário e o simulador são demonstrações locais. Os dados preenchidos e as imagens selecionadas não são enviados nem armazenados. A camada tipada de integração em `src/services/api.ts` já oferece `fetch` para GET, POST, PUT, PATCH e DELETE, com tratamento de respostas HTTP e erros. As páginas ainda não consomem dados remotos: os endpoints Java não foram fornecidos/publicados.
+O formulário de contato e o simulador são demonstrações locais. A página de cadastro consulta `GET /usuarios` e `GET /grupos` e envia novos registros por `POST /usuarios` (campos `id`, `nome` e `email`) e `POST /grupos` (campo `nome`), conforme o código do backend Java. O ID do usuário é solicitado porque o DAO Java o exige; senha, cidade e descrição não são aceitos/persistidos pelo backend. A aplicação encaminha chamadas pelo prefixo `/api` usando o proxy do Vite em desenvolvimento e um rewrite do Vercel em produção, evitando depender de CORS habilitado no navegador.
 
 ## Como executar
 
@@ -38,7 +39,7 @@ npm install
 npm run dev
 ```
 
-Para configurar a API quando a equipe enviar o endereço publicado, copie `.env.example` para `.env.local` e preencha `VITE_API_BASE_URL`. Reinicie o servidor de desenvolvimento após alterar variáveis de ambiente. Não coloque tokens ou credenciais em variáveis `VITE_*`, pois elas ficam acessíveis no navegador.
+Para executar localmente, copie `.env.example` para `.env.local`; o proxy encaminha `/api` para a API Java publicada. Reinicie o servidor de desenvolvimento após alterar variáveis de ambiente.
 
 Para validar a versão de produção:
 
@@ -74,7 +75,7 @@ O `vercel.json` configura o fallback necessário para abrir diretamente as rotas
 ## Repositório, API, deploy e apresentação
 
 - GitHub: [alvesdemacedoenzo-beep/challenge-front-end-fiap](https://github.com/alvesdemacedoenzo-beep/challenge-front-end-fiap)
-- API Java publicada: **pendente de publicação e envio da URL e documentação pela equipe.**
+- API Java publicada: [challeng-sprin4-java.onrender.com](https://challeng-sprin4-java.onrender.com) — integração via `GET`/`POST /usuarios` e `GET`/`POST /grupos`.
 - Aplicação na Vercel: **pendente de implantação e envio da URL pela equipe.**
 - Vídeo de apresentação (até 3 minutos): **link do YouTube pendente de envio pela equipe.**
 
