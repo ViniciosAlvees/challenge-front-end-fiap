@@ -5,6 +5,7 @@ const navigation = [
   { to: "/sobre", label: "Sobre" },
   { to: "/solucao", label: "Solução" },
   { to: "/avatar", label: "Avatar" },
+  { to: "/cadastro", label: "Cadastre-se" },
   { to: "/integrantes", label: "Integrantes" },
   { to: "/faq", label: "FAQ" },
   { to: "/contato", label: "Contato" },

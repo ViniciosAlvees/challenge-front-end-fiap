@@ -47,6 +47,13 @@ export default function HomePage() {
             >
               Sobre a Soul Up
             </button>
+            <button
+              type="button"
+              onClick={() => navigate("/cadastro")}
+              className="rounded-full border border-leaf/40 px-6 py-3 font-semibold text-leaf transition hover:bg-leaf/10 focus:outline-2 focus:outline-offset-4 focus:outline-leaf"
+            >
+              Cadastre-se
+            </button>
           </div>
         </div>
 
