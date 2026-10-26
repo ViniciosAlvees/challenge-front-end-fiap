@@ -14,7 +14,7 @@ A Soul Up é uma proposta de rede social sustentável que transforma ações amb
 - Fetch API nativa para a camada de integração REST
 - Git e GitHub
 
-Não são usados Axios ou frameworks externos de UI. A API Java da equipe ainda não foi publicada; a integração real depende do envio da URL e do contrato dos endpoints.
+Não são usados Axios ou frameworks externos de UI. A integração usa `fetch` e está configurada para a API Java publicada em `https://challeng-sprin4-java.onrender.com`.
 Os dados da equipe usam interfaces TypeScript compostas por intersection types; a simulação do Avatar usa union types.
 
 ## Páginas e recursos
@@ -28,7 +28,9 @@ Os dados da equipe usam interfaces TypeScript compostas por intersection types; 
 - FAQ: perguntas e respostas em acordeão.
 - Contato: formulário tipado com validação de nome, e-mail, assunto e mensagem.
 
-O formulário de contato e o simulador são demonstrações locais. A página de cadastro consulta `GET /usuarios` e `GET /grupos` e envia novos registros por `POST /usuarios` (campos `id`, `nome` e `email`) e `POST /grupos` (campo `nome`), conforme o código do backend Java. O ID do usuário é solicitado porque o DAO Java o exige; senha, cidade e descrição não são aceitos/persistidos pelo backend. A aplicação encaminha chamadas pelo prefixo `/api` usando o proxy do Vite em desenvolvimento e um rewrite do Vercel em produção, evitando depender de CORS habilitado no navegador.
+O formulário de contato e o simulador são demonstrações locais. A página de cadastro consulta `GET /usuarios` e `GET /grupos` e envia novos registros por `POST /usuarios` (campos `id`, `nome` e `email`) e `POST /grupos` (campo `nome`), conforme o contrato usado pelo projeto. O ID do usuário é solicitado porque o backend o exige; senha, cidade e descrição não fazem parte desses cadastros. A aplicação encaminha chamadas pelo prefixo `/api` usando o proxy do Vite em desenvolvimento e um rewrite do Vercel em produção, evitando depender de CORS habilitado no navegador.
+
+Na verificação feita em 26/10/2026, `GET /grupos` respondeu com sucesso, mas `GET /usuarios` retornou HTTP 500. A tela informa erros da API sem apresentar uma lista falsa; o endpoint de usuários precisa ser verificado no backend antes da entrega.
 
 ## Como executar
 
@@ -75,7 +77,9 @@ O `vercel.json` configura o fallback necessário para abrir diretamente as rotas
 ## Repositório, API, deploy e apresentação
 
 - GitHub: [alvesdemacedoenzo-beep/challenge-front-end-fiap](https://github.com/alvesdemacedoenzo-beep/challenge-front-end-fiap)
-- API Java publicada: [challeng-sprin4-java.onrender.com](https://challeng-sprin4-java.onrender.com) — integração via `GET`/`POST /usuarios` e `GET`/`POST /grupos`.
+- API Java: [URL base](https://challeng-sprin4-java.onrender.com).
+- Endpoint de usuários: [`/usuarios`](https://challeng-sprin4-java.onrender.com/usuarios) — usado para `GET` e `POST`.
+- Endpoint de grupos: [`/grupos`](https://challeng-sprin4-java.onrender.com/grupos) — usado para `GET` e `POST`.
 - Aplicação na Vercel: **pendente de implantação e envio da URL pela equipe.**
 - Vídeo de apresentação (até 3 minutos): **link do YouTube pendente de envio pela equipe.**
 
