@@ -28,7 +28,7 @@ Os dados da equipe usam interfaces TypeScript compostas por intersection types; 
 - FAQ: perguntas e respostas em acordeão.
 - Contato: formulário tipado com validação de nome, e-mail, assunto e mensagem.
 
-O formulário de contato e o simulador são demonstrações locais. A página de cadastro consulta `GET /usuarios` e `GET /grupos` e envia novos registros por `POST /usuarios` (campos `id`, `nome` e `email`) e `POST /grupos` (campo `nome`), conforme o contrato usado pelo projeto. O ID do usuário é solicitado porque o backend o exige; senha, cidade e descrição não fazem parte desses cadastros. A aplicação encaminha chamadas pelo prefixo `/api` usando o proxy do Vite em desenvolvimento e um rewrite do Vercel em produção, evitando depender de CORS habilitado no navegador.
+O formulário de contato e o simulador são demonstrações locais. A página de cadastro consulta usuários e grupos e envia novos registros com os dados do formulário: nome e e-mail para usuários; nome para grupos. O ID dos usuários é gerado pelo banco de dados. A aplicação encaminha chamadas pelo prefixo `/api` usando o proxy do Vite em desenvolvimento e um rewrite do Vercel em produção, evitando depender de CORS habilitado no navegador.
 
 Na verificação feita em 26/10/2026, `GET /grupos` respondeu com sucesso, mas `GET /usuarios` retornou HTTP 500. A tela informa erros da API sem apresentar uma lista falsa; o endpoint de usuários precisa ser verificado no backend antes da entrega.
 

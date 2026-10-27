@@ -63,7 +63,6 @@ export function apiPost<TResponse, TBody>(
 }
 
 export type CreateUserRequest = {
-  id: number;
   nome: string;
   email: string;
 };

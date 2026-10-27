@@ -11,7 +11,6 @@ import {
 import type { ApiGroup, ApiUser } from "../services/api";
 
 type UserForm = {
-  id: string;
   nome: string;
   email: string;
 };
@@ -38,7 +37,6 @@ function errorMessage(error: unknown): string {
 
 export default function RegistrationPage() {
   const [userForm, setUserForm] = useState<UserForm>({
-    id: "",
     nome: "",
     email: "",
   });
@@ -93,12 +91,11 @@ export default function RegistrationPage() {
 
     try {
       await createUser({
-        id: Number(userForm.id),
         nome: userForm.nome.trim(),
         email: userForm.email.trim(),
       });
-      setUserForm({ id: "", nome: "", email: "" });
-      setUserSuccess("Usuário enviado para a API com sucesso.");
+      setUserForm({ nome: "", email: "" });
+      setUserSuccess("Usuário cadastrado com sucesso.");
       await refreshUsers();
     } catch (error) {
       setUserFormError(errorMessage(error));
@@ -116,7 +113,7 @@ export default function RegistrationPage() {
     try {
       await createGroup({ nome: groupForm.nome.trim() });
       setGroupForm({ nome: "" });
-      setGroupSuccess("Grupo enviado para a API com sucesso.");
+      setGroupSuccess("Grupo cadastrado com sucesso.");
       await refreshGroups();
     } catch (error) {
       setGroupFormError(errorMessage(error));
@@ -128,38 +125,16 @@ export default function RegistrationPage() {
   return (
     <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 md:py-20">
       <SectionTitle
-        eyebrow="API Soul Up"
+        eyebrow="Comunidade Soul Up"
         title="Cadastre e consulte usuários e grupos"
-        description="Os formulários enviam os dados para a API Java. As listas são carregadas dos endpoints e podem ser atualizadas a qualquer momento."
+        description="Crie seu perfil e forme grupos para transformar boas ideias em ações."
       />
 
       <div className="grid items-start gap-8 lg:grid-cols-2">
         <section className="rounded-3xl border border-white/10 bg-forest-soft/80 p-6 sm:p-8">
           <h2 className="text-2xl font-bold text-white">Usuários</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">
-            Cadastro pelo endpoint <code>POST /usuarios</code>. O backend
-            recebe ID, nome e e-mail; não há campo de senha implementado nele.
-          </p>
 
           <form className="mt-6 space-y-5" onSubmit={submitUser}>
-            <div>
-              <label className={labelClass} htmlFor="user-id">
-                ID do usuário
-              </label>
-              <input
-                id="user-id"
-                type="number"
-                min="1"
-                step="1"
-                required
-                value={userForm.id}
-                onChange={(event) =>
-                  setUserForm({ ...userForm, id: event.target.value })
-                }
-                className={inputClass}
-                placeholder="ID numérico disponível"
-              />
-            </div>
             <div>
               <label className={labelClass} htmlFor="user-name">
                 Nome
@@ -194,7 +169,6 @@ export default function RegistrationPage() {
                 placeholder="voce@email.com"
               />
             </div>
-
             {userFormError && (
               <p role="alert" className="break-words text-sm text-red-300">
                 {userFormError}
@@ -255,10 +229,6 @@ export default function RegistrationPage() {
 
         <section className="rounded-3xl border border-white/10 bg-forest-soft/80 p-6 sm:p-8">
           <h2 className="text-2xl font-bold text-white">Grupos</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">
-            Cadastro pelo endpoint <code>POST /grupos</code>. O backend recebe
-            o nome e gera a data de criação.
-          </p>
 
           <form className="mt-6 space-y-5" onSubmit={submitGroup}>
             <div>
