@@ -14,21 +14,23 @@ A Soul Up é uma proposta de rede social sustentável que transforma ações amb
 - Fetch API nativa para a camada de integração REST
 - Git e GitHub
 
-Não são usados Axios ou frameworks externos de UI. A API Java da equipe ainda não foi publicada; a integração real depende do envio da URL e do contrato dos endpoints.
-Os dados da equipe usam interfaces TypeScript compostas por intersection types; a simulação do Avatar usa union types.
+Não são usados Axios ou frameworks externos de UI. A integração REST usa `fetch` e encaminha chamadas `/api` para `https://challeng-sprin4-java.onrender.com`.
 
 ## Páginas e recursos
 
 - Início: apresentação e acesso rápido às áreas do projeto.
 - Sobre: problema, proposta, pilares, jornada, inovação e oportunidades de capacitação.
 - Solução: frentes da proposta e páginas dinâmicas de detalhes em `/solucao/:slug`.
-- Avatar: explicação e simulador interativo de desafio, envio local de evidência e validação.
-- Cadastro: formulários independentes para cadastrar e listar usuários e grupos.
+- Avatar: explicação do mentor digital da plataforma.
+- Conta: criação de conta com nome, e-mail e senha, entrada em conta existente e encerramento de sessão.
+- Perfil: nome, e-mail e pontuação da conta conectada.
+- Cadastrar grupo: pesquisa usuários por nome ou e-mail e cria grupos com os membros selecionados.
+- Desafios: catálogo interativo com evidência por foto e registro local de conclusão e pontuação.
 - Integrantes: nomes, RMs, fotos e perfis profissionais da equipe.
 - FAQ: perguntas e respostas em acordeão.
 - Contato: formulário tipado com validação de nome, e-mail, assunto e mensagem.
 
-O formulário de contato e o simulador são demonstrações locais. A página de cadastro consulta `GET /usuarios` e `GET /grupos` e envia novos registros por `POST /usuarios` (campos `id`, `nome` e `email`) e `POST /grupos` (campo `nome`), conforme o código do backend Java. O ID do usuário é solicitado porque o DAO Java o exige; senha, cidade e descrição não são aceitos/persistidos pelo backend. A aplicação encaminha chamadas pelo prefixo `/api` usando o proxy do Vite em desenvolvimento e um rewrite do Vercel em produção, evitando depender de CORS habilitado no navegador.
+O formulário de contato e a evidência dos desafios são demonstrações locais; fotos não são enviadas ao servidor. A conclusão e a pontuação dos desafios ficam salvas no navegador por conta. A API Java publica `GET` e `POST /usuarios` e `GET` e `POST /grupos`. A listagem de usuários usa `GET /usuarios`; a criação de grupo usa `POST /grupos` com `nome`. No backend atual, o DAO de grupos persiste somente o nome e a data, portanto os membros selecionados na interface ainda não ficam associados após a criação. O endpoint de usuários espera `id`, `nome` e `email`; não há endpoint de autenticação ou senha publicado, então login real não pode ser realizado por essa API. Em desenvolvimento, o proxy do Vite e, em produção, o rewrite do Vercel encaminham `/api` para a URL Java.
 
 ## Como executar
 
@@ -75,7 +77,7 @@ O `vercel.json` configura o fallback necessário para abrir diretamente as rotas
 ## Repositório, API, deploy e apresentação
 
 - GitHub: [alvesdemacedoenzo-beep/challenge-front-end-fiap](https://github.com/alvesdemacedoenzo-beep/challenge-front-end-fiap)
-- API Java publicada: [challeng-sprin4-java.onrender.com](https://challeng-sprin4-java.onrender.com) — integração via `GET`/`POST /usuarios` e `GET`/`POST /grupos`.
+- API Java: [challeng-sprin4-java.onrender.com](https://challeng-sprin4-java.onrender.com) — cadastro e autenticação por `POST /usuarios`, `POST /auth/login`, `GET /auth/me` e `POST /auth/logout`.
 - Aplicação na Vercel: **pendente de implantação e envio da URL pela equipe.**
 - Vídeo de apresentação (até 3 minutos): **link do YouTube pendente de envio pela equipe.**
 
