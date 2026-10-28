@@ -70,7 +70,6 @@ export const teamMembers: TeamMember[] = [
 
 export type SolutionTopic = {
   slug: string;
-  icon: string;
   title: string;
   summary: string;
   detail: string;
@@ -79,7 +78,6 @@ export type SolutionTopic = {
 export const solutionTopics: SolutionTopic[] = [
   {
     slug: "desafios",
-    icon: "🌱",
     title: "Desafios sustentáveis",
     summary: "Ações individuais e coletivas que aproximam intenção e impacto.",
     detail:
@@ -87,7 +85,6 @@ export const solutionTopics: SolutionTopic[] = [
   },
   {
     slug: "avatar",
-    icon: "🤖",
     title: "Avatar inteligente",
     summary: "Um mentor que recomenda desafios e acompanha a jornada.",
     detail:
@@ -95,7 +92,6 @@ export const solutionTopics: SolutionTopic[] = [
   },
   {
     slug: "validacao",
-    icon: "🛡️",
     title: "Validação comunitária",
     summary: "Evidências analisadas por outros membros da comunidade.",
     detail:
@@ -103,7 +99,6 @@ export const solutionTopics: SolutionTopic[] = [
   },
   {
     slug: "gamificacao",
-    icon: "🏆",
     title: "Gamificação e reconhecimento",
     summary: "Pontos, níveis e rankings para reconhecer a participação.",
     detail:
@@ -111,7 +106,6 @@ export const solutionTopics: SolutionTopic[] = [
   },
   {
     slug: "impacto",
-    icon: "♻️",
     title: "Impacto e oportunidades",
     summary: "Uma ponte entre comunidades, organizações e capacitação.",
     detail:

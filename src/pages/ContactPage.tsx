@@ -46,7 +46,7 @@ export default function ContactPage() {
               className="mt-4 inline-flex font-semibold text-leaf underline-offset-4 hover:underline"
               href="mailto:soulup@gmail.com"
             >
-              ✉ soulup@gmail.com
+              soulup@gmail.com
             </a>
             <p className="mt-3 text-sm text-muted">São Paulo — SP, Brasil</p>
           </div>

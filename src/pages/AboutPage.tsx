@@ -3,25 +3,21 @@ import SectionTitle from "../components/SectionTitle";
 
 const pillars = [
   {
-    icon: "🤝",
     title: "Gamificação coletiva",
     description:
       "Grupos, níveis, conquistas, rankings e desafios tornam a sustentabilidade uma experiência social e recorrente, com mutirões, gincanas e plantios urbanos.",
   },
   {
-    icon: "🛡️",
     title: "Validação comunitária",
     description:
       "As ações são publicadas com evidências e submetidas à confirmação de membros diferentes do autor, ajudando a proteger a confiança na plataforma.",
   },
   {
-    icon: "🌎",
     title: "Reputação sustentável",
     description:
       "Empresas e marcas podem apoiar campanhas e apresentar indicadores de impacto, fortalecendo sua reputação junto à comunidade.",
   },
   {
-    icon: "🎓",
     title: "Capacitação profissional",
     description:
       "A proposta conecta o engajamento sustentável a oportunidades de formação e desenvolvimento pessoal e profissional.",
@@ -47,7 +43,7 @@ export default function AboutPage() {
       />
 
       <section className="grid gap-6 md:grid-cols-2">
-        <InfoCard title="Quem somos" icon="🌿">
+        <InfoCard title="Quem somos">
           <p>
             A <strong className="text-white">Soul Up</strong> busca transformar a maneira como as
             pessoas se relacionam com a sustentabilidade. Muitos jovens têm consciência ambiental,
@@ -60,7 +56,7 @@ export default function AboutPage() {
             reconhecimento e acompanhar o próprio desenvolvimento.
           </p>
         </InfoCard>
-        <InfoCard title="O desafio que identificamos" icon="🧭">
+        <InfoCard title="O desafio que identificamos">
           A intenção de cuidar do meio ambiente nem sempre se transforma em ação. A falta de
           incentivo social, acompanhamento e validação pode reduzir o engajamento e a confiança em
           sistemas de pontuação.
@@ -75,7 +71,7 @@ export default function AboutPage() {
         />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {pillars.map((pillar) => (
-            <InfoCard key={pillar.title} icon={pillar.icon} title={pillar.title}>
+            <InfoCard key={pillar.title} title={pillar.title}>
               {pillar.description}
             </InfoCard>
           ))}
@@ -105,12 +101,12 @@ export default function AboutPage() {
       </section>
 
       <section className="mt-16 grid gap-6 md:grid-cols-2">
-        <InfoCard title="Inovação e modelo de negócio" icon="✨">
+        <InfoCard title="Inovação e modelo de negócio">
           A inovação está em transformar ações ambientais individuais em experiências coletivas,
           participativas e verificáveis. O modelo prevê patrocínios de desafios, campanhas de
           marcas, recursos empresariais e indicadores de impacto.
         </InfoCard>
-        <InfoCard title="Capacitação profissional" icon="🎓">
+        <InfoCard title="Capacitação profissional">
           SENAI, SENAC e ETEC são instituições pretendidas como possíveis parceiras educacionais,
           sem convênios formalizados. A Soul Up não garante vagas, bolsas, gratuidades ou
           certificados; oportunidades e requisitos dependem de cada instituição.

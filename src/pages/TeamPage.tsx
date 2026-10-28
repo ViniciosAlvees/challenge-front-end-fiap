@@ -35,7 +35,7 @@ export default function TeamPage() {
                   rel="noreferrer"
                   className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-mint transition hover:border-leaf/50 hover:text-leaf"
                 >
-                  LinkedIn ↗
+                  LinkedIn
                 </a>
                 <a
                   href={member.github}
@@ -43,7 +43,7 @@ export default function TeamPage() {
                   rel="noreferrer"
                   className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-mint transition hover:border-leaf/50 hover:text-leaf"
                 >
-                  GitHub ↗
+                  GitHub
                 </a>
               </div>
             </div>

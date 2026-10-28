@@ -2,12 +2,12 @@ import { useNavigate } from "react-router-dom";
 import InfoCard from "../components/InfoCard";
 
 const destinations = [
-  { icon: "🌿", title: "Sobre o projeto", text: "Conheça o propósito e os pilares da Soul Up.", to: "/sobre" },
-  { icon: "🌎", title: "Nossa solução", text: "Veja como a tecnologia transforma atitudes em impacto.", to: "/solucao" },
-  { icon: "🤖", title: "Avatar mentor", text: "Descubra como o guia acompanha cada desafio.", to: "/avatar" },
-  { icon: "👥", title: "Integrantes", text: "Conheça as pessoas por trás desta iniciativa.", to: "/integrantes" },
-  { icon: "💬", title: "Perguntas frequentes", text: "Encontre respostas sobre a plataforma.", to: "/faq" },
-  { icon: "✉️", title: "Fale com a equipe", text: "Envie uma mensagem para o nosso time.", to: "/contato" },
+  { title: "Sobre o projeto", text: "Conheça o propósito e os pilares da Soul Up.", to: "/sobre" },
+  { title: "Nossa solução", text: "Veja como a tecnologia transforma atitudes em impacto.", to: "/solucao" },
+  { title: "Avatar mentor", text: "Descubra como o guia acompanha cada desafio.", to: "/avatar" },
+  { title: "Integrantes", text: "Conheça as pessoas por trás desta iniciativa.", to: "/integrantes" },
+  { title: "Perguntas frequentes", text: "Encontre respostas sobre a plataforma.", to: "/faq" },
+  { title: "Fale com a equipe", text: "Envie uma mensagem para o nosso time.", to: "/contato" },
 ];
 
 export default function HomePage() {
@@ -18,7 +18,7 @@ export default function HomePage() {
       <section className="grid min-h-[570px] items-center gap-12 py-16 md:grid-cols-[1.2fr_0.8fr] md:py-24">
         <div>
           <p className="mb-6 inline-flex rounded-full border border-leaf/30 bg-leaf/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-leaf">
-            🌱 Gamificação &amp; sustentabilidade
+            Gamificação &amp; sustentabilidade
           </p>
           <h1 className="max-w-3xl text-5xl font-black leading-[1.06] tracking-tight text-white sm:text-6xl lg:text-7xl">
             Pequenas ações.
@@ -60,12 +60,12 @@ export default function HomePage() {
         <div className="relative mx-auto flex aspect-square w-full max-w-md items-center justify-center rounded-full border border-leaf/20 bg-[radial-gradient(circle,rgba(163,243,107,0.16),rgba(13,33,21,0.25)_48%,transparent_70%)]">
           <div className="absolute inset-[12%] rounded-full border border-dashed border-leaf/25" />
           <div className="absolute inset-[24%] rounded-full border border-leaf/20" />
-          <div className="flex h-40 w-40 items-center justify-center rounded-[2.5rem] border border-leaf/35 bg-forest-soft text-7xl shadow-[0_0_90px_rgba(163,243,107,0.15)] sm:h-48 sm:w-48">
-            🌍
+          <div className="flex h-40 w-40 items-center justify-center rounded-[2.5rem] border border-leaf/35 bg-forest-soft text-center text-lg font-bold text-leaf shadow-[0_0_90px_rgba(163,243,107,0.15)] sm:h-48 sm:w-48">
+            Sustentabilidade
           </div>
-          <span className="absolute left-[12%] top-[27%] rounded-full border border-white/10 bg-forest-soft px-4 py-2 text-sm text-mint">🌱 Ação</span>
-          <span className="absolute right-[5%] top-[44%] rounded-full border border-white/10 bg-forest-soft px-4 py-2 text-sm text-mint">🤝 Comunidade</span>
-          <span className="absolute bottom-[20%] left-[15%] rounded-full border border-white/10 bg-forest-soft px-4 py-2 text-sm text-mint">🏆 Impacto</span>
+          <span className="absolute left-[12%] top-[27%] rounded-full border border-white/10 bg-forest-soft px-4 py-2 text-sm text-mint">Ação</span>
+          <span className="absolute right-[5%] top-[44%] rounded-full border border-white/10 bg-forest-soft px-4 py-2 text-sm text-mint">Comunidade</span>
+          <span className="absolute bottom-[20%] left-[15%] rounded-full border border-white/10 bg-forest-soft px-4 py-2 text-sm text-mint">Impacto</span>
         </div>
       </section>
 
@@ -87,7 +87,7 @@ export default function HomePage() {
               onClick={() => navigate(destination.to)}
               className="text-left"
             >
-              <InfoCard icon={destination.icon} title={destination.title}>
+              <InfoCard title={destination.title}>
                 <span>{destination.text}</span>
                 <span className="mt-4 block text-sm font-semibold text-leaf">Saiba mais →</span>
               </InfoCard>
