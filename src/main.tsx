@@ -1,9 +1,9 @@
+import { AuthProvider } from "./contexts/AuthContext";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
 
-// Layout y páginas
 import SiteLayout from "./components/SiteLayout";
 import AboutPage from "./pages/AboutPage";
 import AvatarPage from "./pages/AvatarPage";
@@ -44,6 +44,8 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   </StrictMode>
 );
