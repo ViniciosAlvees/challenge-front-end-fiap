@@ -67,12 +67,14 @@ export function apiPost<TResponse, TBody>(
   });
 }
 
-<<<<<<< HEAD
+
 export type AccountCredentials = {
-=======
+  email: string;
+  senha: string;
+};
+
 export type CreateUserRequest = {
   nome: string;
->>>>>>> 716104757b96e6b7012366d889b0e1b5396d332b
   email: string;
   senha: string;
 };
