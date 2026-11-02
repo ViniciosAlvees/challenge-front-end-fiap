@@ -9,8 +9,7 @@ export class ApiError extends Error {
 }
 
 function getApiUrl(path: string): URL {
-  const baseUrl =
-    import.meta.env.VITE_API_BASE_URL?.trim() || "/api";
+  const baseUrl = import.meta.env.VITE_API_BASE_URL?.trim() || "/api";
   const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   const resolvedBaseUrl = new URL(normalizedBaseUrl, window.location.origin);
   return new URL(path.replace(/^\/+/, ""), resolvedBaseUrl);
@@ -67,219 +66,6 @@ export function apiPost<TResponse, TBody>(
   });
 }
 
-
-export type AccountCredentials = {
-  email: string;
-  senha: string;
-};
-
-export type CreateUserRequest = {
-  nome: string;
-  email: string;
-  senha: string;
-};
-
-export type RegisterAccountRequest = AccountCredentials & {
-  nome: string;
-};
-
-export type AccountUser = {
-  id: number;
-  nome: string;
-  email: string;
-  pontosAdquiridos?: number;
-  pontuacao?: number;
-};
-
-const accountStorageKey = "soul-up:account";
-
-export function getStoredAccount(): AccountUser | null {
-  const storedAccount = sessionStorage.getItem(accountStorageKey);
-  if (!storedAccount) return null;
-
-  const parsedAccount: unknown = JSON.parse(storedAccount);
-  if (
-    typeof parsedAccount !== "object" ||
-    parsedAccount === null ||
-    !("id" in parsedAccount) ||
-    typeof parsedAccount.id !== "number" ||
-    !("nome" in parsedAccount) ||
-    typeof parsedAccount.nome !== "string" ||
-    !("email" in parsedAccount) ||
-    typeof parsedAccount.email !== "string" ||
-    ("pontosAdquiridos" in parsedAccount &&
-      typeof parsedAccount.pontosAdquiridos !== "number") ||
-    ("pontuacao" in parsedAccount &&
-      typeof parsedAccount.pontuacao !== "number")
-  ) {
-    sessionStorage.removeItem(accountStorageKey);
-    throw new Error("Os dados salvos da conta estão inválidos. Entre novamente.");
-  }
-
-  return {
-    id: parsedAccount.id,
-    nome: parsedAccount.nome,
-    email: parsedAccount.email,
-    ...("pontosAdquiridos" in parsedAccount &&
-    typeof parsedAccount.pontosAdquiridos === "number"
-      ? { pontosAdquiridos: parsedAccount.pontosAdquiridos }
-      : {}),
-    ...("pontuacao" in parsedAccount &&
-    typeof parsedAccount.pontuacao === "number"
-      ? { pontuacao: parsedAccount.pontuacao }
-      : {}),
-  };
-}
-
-export function storeAccount(account: AccountUser): void {
-  sessionStorage.setItem(accountStorageKey, JSON.stringify(account));
-}
-
-export function clearStoredAccount(): void {
-  sessionStorage.removeItem(accountStorageKey);
-}
-
-export type ApiUser = Pick<AccountUser, "id" | "nome" | "email"> & {
-  pontosAdquiridos?: number;
-};
-
-export type CreateGroupRequest = {
-  nome: string;
-};
-
-export type ApiGroup = {
-  id: number;
-  nome: string;
-  dataCriacao?: string;
-  pontosAcumulados?: number;
-  membros?: ApiUser[];
-  nivel?: string;
-};
-
-function parseApiUser(user: unknown, index: number): ApiUser {
-  if (
-    typeof user !== "object" ||
-    user === null ||
-    !("id" in user) ||
-    typeof user.id !== "number" ||
-    !("nome" in user) ||
-    typeof user.nome !== "string" ||
-    !("email" in user) ||
-    typeof user.email !== "string"
-  ) {
-    throw new Error(
-      `O usuário ${index + 1} retornado pela API não contém id, nome e e-mail válidos.`,
-    );
-  }
-
-  if (
-    "pontosAdquiridos" in user &&
-    typeof user.pontosAdquiridos !== "number"
-  ) {
-    throw new Error(
-      `O usuário ${index + 1} retornado pela API contém pontuação inválida.`,
-    );
-  }
-
-  return {
-    id: user.id,
-    nome: user.nome,
-    email: user.email,
-    ...("pontosAdquiridos" in user &&
-    typeof user.pontosAdquiridos === "number"
-      ? { pontosAdquiridos: user.pontosAdquiridos }
-      : {}),
-  };
-}
-
-export function registerAccount(
-  account: RegisterAccountRequest,
-): Promise<AccountUser | null> {
-  return apiPost<AccountUser, RegisterAccountRequest>("/usuarios", account);
-}
-
-export function login(
-  credentials: AccountCredentials,
-): Promise<AccountUser | null> {
-  return apiPost<AccountUser, AccountCredentials>(
-    "/auth/login",
-    credentials,
-    { credentials: "include" },
-  );
-}
-
-export function getCurrentAccount(): Promise<AccountUser | null> {
-  return apiGet<AccountUser>("/auth/me");
-}
-
-export function logout(): Promise<null> {
-  return request<never>("/auth/logout", {
-    method: "POST",
-    credentials: "include",
-  });
-}
-
-export async function listUsers(): Promise<ApiUser[]> {
-  const response = await apiGet<unknown>("/usuarios");
-  if (!Array.isArray(response)) {
-    throw new Error("A API não retornou uma lista de usuários válida.");
-  }
-
-  return response.map(parseApiUser);
-}
-
-export function createGroup(
-  group: CreateGroupRequest,
-): Promise<ApiGroup | null> {
-  return apiPost<ApiGroup, CreateGroupRequest>("/grupos", group);
-}
-
-export async function listGroups(): Promise<ApiGroup[]> {
-  const response = await apiGet<unknown>("/grupos");
-  if (!Array.isArray(response)) {
-    throw new Error("A API não retornou uma lista de grupos válida.");
-  }
-
-  return response.map((group, index) => {
-    if (
-      typeof group !== "object" ||
-      group === null ||
-      !("id" in group) ||
-      typeof group.id !== "number" ||
-      !("nome" in group) ||
-      typeof group.nome !== "string"
-    ) {
-      throw new Error(
-        `O grupo ${index + 1} retornado pela API não contém id e nome válidos.`,
-      );
-    }
-
-    if ("membros" in group && !Array.isArray(group.membros)) {
-      throw new Error(
-        `O grupo ${index + 1} retornado pela API contém uma lista de membros inválida.`,
-      );
-    }
-
-    return {
-      id: group.id,
-      nome: group.nome,
-      ...("dataCriacao" in group && typeof group.dataCriacao === "string"
-        ? { dataCriacao: group.dataCriacao }
-        : {}),
-      ...("pontosAcumulados" in group &&
-      typeof group.pontosAcumulados === "number"
-        ? { pontosAcumulados: group.pontosAcumulados }
-        : {}),
-      ...("membros" in group && Array.isArray(group.membros)
-        ? { membros: group.membros.map(parseApiUser) }
-        : {}),
-      ...("nivel" in group && typeof group.nivel === "string"
-        ? { nivel: group.nivel }
-        : {}),
-    };
-  });
-}
-
 export function apiPut<TResponse, TBody>(
   path: string,
   body: TBody,
@@ -304,4 +90,206 @@ export function apiPatch<TResponse, TBody>(
 
 export function apiDelete(path: string): Promise<null> {
   return request<never>(path, { method: "DELETE" });
+}
+
+
+
+export type AccountCredentials = {
+  email: string;
+  senha: string;
+};
+
+export type CreateUserRequest = {
+  nome: string;
+  email: string;
+  senha: string;
+};
+
+export type RegisterAccountRequest = AccountCredentials & {
+  nome: string;
+};
+
+export type AccountUser = {
+  id: number;
+  nome: string;
+  email: string;
+  pontosAdquiridos?: number;
+  pontuacao?: number;
+};
+
+export type ApiUser = Pick<AccountUser, "id" | "nome" | "email"> & {
+  pontosAdquiridos?: number;
+};
+
+export type CreateGroupRequest = {
+  nome: string;
+};
+
+export type ApiGroup = {
+  id: number;
+  nome: string;
+  dataCriacao?: string;
+  pontosAcumulados?: number;
+  membros?: ApiUser[];
+  nivel?: string;
+};
+
+export type ApiChallenge = {
+  id: number;
+  titulo: string;
+  descricao: string;
+  pontos: number;
+  categoria: string;
+};
+
+
+const accountStorageKey = "soul-up:account";
+
+export function getStoredAccount(): AccountUser | null {
+  const storedAccount = sessionStorage.getItem(accountStorageKey);
+  if (!storedAccount) return null;
+
+  try {
+    const parsedAccount = JSON.parse(storedAccount);
+    return {
+      id: parsedAccount.id,
+      nome: parsedAccount.nome,
+      email: parsedAccount.email,
+      pontosAdquiridos: parsedAccount.pontosAdquiridos ?? 0,
+      pontuacao: parsedAccount.pontuacao ?? 0,
+    };
+  } catch {
+    sessionStorage.removeItem(accountStorageKey);
+    return null;
+  }
+}
+
+export function storeAccount(account: AccountUser): void {
+  sessionStorage.setItem(accountStorageKey, JSON.stringify(account));
+}
+
+export function clearStoredAccount(): void {
+  sessionStorage.removeItem(accountStorageKey);
+}
+
+
+export function registerAccount(
+  account: RegisterAccountRequest,
+): Promise<AccountUser | null> {
+  return apiPost<AccountUser, RegisterAccountRequest>("/usuarios", account);
+}
+
+export async function login(
+  credentials: AccountCredentials,
+): Promise<AccountUser | null> {
+  try {
+    // 1. Intenta consultar el servicio Python en /auth/login
+    const pythonResponse = await apiPost<AccountUser, AccountCredentials>(
+      "/auth/login",
+      credentials,
+      { credentials: "include" }
+    );
+    if (pythonResponse) {
+      storeAccount(pythonResponse);
+      return pythonResponse;
+    }
+  } catch {
+    // 2. Si Python aún no está activo, valida temporalmente contra los usuarios de Oracle (vía Java)
+    const users = await listUsers();
+    const matchedUser = users.find(
+      (u) => u.email.trim().toLowerCase() === credentials.email.trim().toLowerCase()
+    );
+
+    if (!matchedUser) {
+      throw new ApiError("E-mail ou senha incorretos.", 401);
+    }
+
+    const account: AccountUser = {
+      id: matchedUser.id,
+      nome: matchedUser.nome,
+      email: matchedUser.email,
+      pontosAdquiridos: matchedUser.pontosAdquiridos ?? 0,
+    };
+    storeAccount(account);
+    return account;
+  }
+
+  throw new ApiError("Erro ao autenticar usuário.", 401);
+}
+
+export async function getCurrentAccount(): Promise<AccountUser | null> {
+  return getStoredAccount();
+}
+
+export async function logout(): Promise<null> {
+  try {
+    await request<never>("/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+  } finally {
+    clearStoredAccount();
+  }
+  return null;
+}
+
+
+
+function parseApiUser(user: any, index: number): ApiUser {
+  return {
+    id: user.id ?? user.id_usuario ?? index + 1,
+    nome: user.nome || "Usuário sem nome",
+    email: user.email || "Sem e-mail",
+    pontosAdquiridos: user.pontosAdquiridos ?? user.pontos ?? 0,
+  };
+}
+
+export async function listUsers(): Promise<ApiUser[]> {
+  const response = await apiGet<unknown>("/usuarios");
+  if (!Array.isArray(response)) {
+    throw new Error("A API não retornou uma lista de usuários válida.");
+  }
+  return response.map(parseApiUser);
+}
+
+export function deleteUser(id: number): Promise<null> {
+  return apiDelete(`/usuarios/${id}`);
+}
+
+
+
+export function createGroup(group: CreateGroupRequest): Promise<ApiGroup | null> {
+  return apiPost<ApiGroup, CreateGroupRequest>("/grupos", group);
+}
+
+export async function listGroups(): Promise<ApiGroup[]> {
+  const response = await apiGet<unknown>("/grupos");
+  if (!Array.isArray(response)) {
+    throw new Error("A API não retornou uma lista de grupos válida.");
+  }
+  return response.map((group: any, index: number) => ({
+    id: group.id ?? group.id_grupo ?? index + 1,
+    nome: group.nome || "Grupo sem nome",
+    dataCriacao: group.dataCriacao || group.data_criacao || new Date().toLocaleDateString("pt-BR"),
+    pontosAcumulados: group.pontosAcumulados ?? group.pontos ?? 0,
+  }));
+}
+
+export function deleteGroup(id: number): Promise<null> {
+  return apiDelete(`/grupos/${id}`);
+}
+
+
+export async function listChallenges(): Promise<ApiChallenge[]> {
+  const response = await apiGet<unknown>("/desafios");
+  if (!Array.isArray(response)) {
+    throw new Error("A API não retornou uma lista de desafios válida.");
+  }
+  return response.map((d: any) => ({
+    id: d.id ?? d.id_desafio,
+    titulo: d.titulo || "Desafio sem título",
+    descricao: d.descricao || "",
+    pontos: d.pontos ?? 0,
+    categoria: d.categoria || "Geral",
+  }));
 }

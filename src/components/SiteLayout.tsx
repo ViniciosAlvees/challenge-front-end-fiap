@@ -12,6 +12,7 @@ const navigation = [
   { to: "/integrantes", label: "Integrantes" },
   { to: "/faq", label: "FAQ" },
   { to: "/contato", label: "Contato" },
+  { to: "/gestao", label: "Painel Gestão" },
 ];
 
 export default function SiteLayout() {
