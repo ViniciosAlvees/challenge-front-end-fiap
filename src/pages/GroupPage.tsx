@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import type { FormEvent } from "react";
 import SectionTitle from "../components/SectionTitle";
 import {
   ApiError,
   createGroup,
   listUsers,
+  getGroup,
 } from "../services/api";
 import type { ApiUser } from "../services/api";
 
@@ -18,6 +20,7 @@ export default function GroupPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [createdGroupId, setCreatedGroupId] = useState<number | null>(null);
 
   const findUsers = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -72,13 +75,17 @@ export default function GroupPage() {
     try {
       const createdGroup = await createGroup({
         nome: groupName.trim(),
+        membros: selectedUsers.map((user) => ({ id: user.id })),
       });
       if (!createdGroup) {
         throw new Error("A API não confirmou a criação do grupo.");
       }
-      setSuccessMessage(
-        `Grupo “${createdGroup.nome}” criado. A API ainda não salva os membros associados ao grupo.`,
-      );
+      setCreatedGroupId(createdGroup.id);
+      setSuccessMessage(`Grupo “${createdGroup.nome}” criado. Verificando os membros...`);
+      const persisted = await getGroup(createdGroup.id);
+      const confirmedIds = new Set(persisted.membros?.map((member) => member.id));
+      const confirmed = selectedUsers.every((member) => confirmedIds.has(member.id));
+      setSuccessMessage(confirmed ? `Grupo “${createdGroup.nome}” cadastrado e consultado na API com sucesso.` : `O grupo “${createdGroup.nome}” foi criado, mas a API não confirmou os membros. Não repita o cadastro; o vínculo precisa ser corrigido no servidor.`);
       setGroupName("");
       setSearch("");
       setUsers([]);
@@ -106,9 +113,8 @@ export default function GroupPage() {
       />
 
       <p className="mb-5 rounded-xl border border-leaf/20 bg-leaf/5 p-4 text-sm leading-6 text-mint">
-        A API atualmente cadastra somente o nome do grupo. Você pode pesquisar
-        e selecionar pessoas, mas o backend ainda não permite associá-las ao
-        grupo.
+        Escolha um nome e selecione os participantes. Após o cadastro, vamos
+        consultar o grupo para verificar os membros confirmados.
       </p>
 
       <div className="space-y-8 rounded-3xl border border-white/10 bg-forest-soft/80 p-6 sm:p-8">
@@ -217,11 +223,13 @@ export default function GroupPage() {
         <button
           type="button"
           onClick={submitGroup}
-          disabled={isCreating}
+          disabled={isCreating || createdGroupId !== null}
           className="w-full rounded-full bg-leaf px-6 py-3 font-bold text-forest transition hover:bg-leaf-bright disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isCreating ? "Criando grupo..." : "Criar grupo"}
         </button>
+        {createdGroupId !== null && <Link to={`/grupos/${createdGroupId}`} className="block font-semibold text-leaf hover:underline">Ver grupo criado</Link>}
+        <Link to="/grupos" className="inline-flex font-semibold text-leaf hover:underline">Consultar grupos cadastrados</Link>
       </div>
     </div>
   );

@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
 import SectionTitle from "../components/SectionTitle";
-import { ApiError, getCurrentAccount } from "../services/api";
-import type { AccountUser } from "../services/api";
+import { getCurrentAccount } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 import {
   getCompletedChallengeIds,
   getChallengePoints,
@@ -27,7 +27,7 @@ export default function ChallengesPage() {
     )
       ? location.state.challengeId
       : null;
-  const [account, setAccount] = useState<AccountUser | null>(null);
+  const { user: account, errorMessage: accountNotice } = useAuth();
   const [selectedId, setSelectedId] = useState<number | null>(
     initialChallengeId,
   );
@@ -40,38 +40,14 @@ export default function ChallengesPage() {
   const [completedIds, setCompletedIds] = useState<number[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
-  const [accountNotice, setAccountNotice] = useState("");
-
-  useEffect(() => {
-    let active = true;
-
-    getCurrentAccount()
-      .then((currentAccount) => {
-        if (active) setAccount(currentAccount);
-      })
-      .catch((error: unknown) => {
-        if (!active) return;
-        if (error instanceof ApiError && error.status === 401) {
-          setAccount(null);
-        } else {
-          setAccountNotice(
-            error instanceof Error
-              ? `Não foi possível verificar a sessão: ${error.message}`
-              : "Não foi possível verificar a sessão.",
-          );
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  const [localPoints, setLocalPoints] = useState(0);
 
   useEffect(() => {
     try {
       setChallenges(getLocalChallenges());
       setActions(getLocalActions());
       setCompletedIds(getCompletedChallengeIds(account?.id ?? null));
+      setLocalPoints(getChallengePoints(getCompletedChallengeIds(account?.id ?? null)));
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Não foi possível ler seu progresso.",
@@ -109,6 +85,8 @@ export default function ChallengesPage() {
 
     setSubmitting(true);
     try {
+      const verified = await getCurrentAccount();
+      if (!verified || verified.id !== account.id) throw new Error("Sua sessão expirou. Entre novamente antes de publicar.");
       const image = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(String(reader.result));
@@ -289,7 +267,7 @@ export default function ChallengesPage() {
       <p className="mt-8 text-sm text-muted">
         Pontos acumulados:{" "}
         <strong className="text-leaf">
-          {getChallengePoints(completedIds)}
+          {localPoints}
         </strong>
         {" · "}
         <Link className="font-semibold text-leaf hover:underline" to="/perfil">

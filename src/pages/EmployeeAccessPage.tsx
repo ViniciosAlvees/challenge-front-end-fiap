@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import type { FormEvent } from "react";
 import SectionTitle from "../components/SectionTitle";
 import { ApiError } from "../services/api";
@@ -24,6 +25,7 @@ export default function EmployeeAccessPage() {
   const [category, setCategory] = useState("");
   const [points, setPoints] = useState(100);
   const [opinions, setOpinions] = useState<Record<number, string>>({});
+  const loadVersion = useRef(0);
 
   function refreshLocal() {
     setChallenges(getLocalChallenges());
@@ -32,19 +34,25 @@ export default function EmployeeAccessPage() {
   }
 
   async function load() {
+    const version = ++loadVersion.current;
     setLoading(true);
     setError("");
     setSuccess("");
     try {
       if (!await checkEmployeeAccess()) throw new Error("Sua sessão expirou. Saia desta área e informe a senha novamente.");
-      if (selected === 0) setUsers(await listEmployeeUsers());
+      if (selected === 0) {
+        const result = await listEmployeeUsers();
+        if (version !== loadVersion.current) return;
+        setUsers(result);
+      }
+      if (version !== loadVersion.current) return;
       refreshLocal();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Não foi possível carregar os dados.");
-    } finally { setLoading(false); }
+      if (version === loadVersion.current) setError(cause instanceof Error ? cause.message : "Não foi possível carregar os dados.");
+    } finally { if (version === loadVersion.current) setLoading(false); }
   }
 
-  useEffect(() => { void load(); }, [selected]);
+  useEffect(() => { void load(); return () => { loadVersion.current += 1; }; }, [selected]);
 
   async function change(operation: () => void, message: string) {
     setLoading(true);
@@ -72,6 +80,7 @@ export default function EmployeeAccessPage() {
 
   return <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8">
     <SectionTitle eyebrow="Gestão Soul Up" title="Acesso Funcionário" description="Gerencie desafios e acompanhe as ações sustentáveis da comunidade." />
+    <Link to="/gestao" className="mb-6 inline-flex text-sm font-semibold text-leaf hover:underline">Consultar e gerenciar cadastros da API</Link>
     <div className="grid items-start gap-7 lg:grid-cols-[280px_1fr]">
       <nav aria-label="Ferramentas de funcionários" className="grid gap-2 rounded-3xl border border-white/10 bg-forest-soft p-3 sm:grid-cols-2 lg:grid-cols-1">
         {options.map((label, index) => <button key={label} type="button" aria-current={selected === index ? "page" : undefined} onClick={() => { setSelected(index); setError(""); setSuccess(""); }} className={`flex items-start gap-3 rounded-2xl px-4 py-4 text-left text-sm font-semibold transition ${selected === index ? "bg-leaf/10 text-leaf" : "text-mint hover:bg-white/5"}`}><span className="font-black">{index + 1}</span>{label}</button>)}
@@ -85,7 +94,7 @@ export default function EmployeeAccessPage() {
         {error && <p role="alert" className="mb-5 rounded-xl border border-red-300/20 p-4 text-sm text-red-200">{error}</p>}
         {success && <p role="status" className="mb-5 rounded-xl border border-leaf/20 p-4 text-sm text-leaf">{success}</p>}
 
-        {selected === 0 && !loading && !error && (users.length ? <ul className="space-y-3">{users.map((user) => <li key={user.id} className="rounded-2xl border border-white/10 p-4"><p className="font-bold text-white">{user.nome} <span className="text-sm font-normal text-muted">· ID {user.id}</span></p><p className="mt-1 break-all text-sm text-mint">{user.email}</p></li>)}</ul> : <p className="text-muted">Nenhum usuário retornado pela API.</p>)}
+        {selected === 0 && !loading && !error && (users.length ? <ul className="space-y-3">{users.map((user) => <li key={user.id} className="rounded-2xl border border-white/10 p-4"><p className="break-words font-bold text-white">{user.nome} <span className="text-sm font-normal text-muted">· ID {user.id}</span></p><p className="mt-1 break-all text-sm text-mint">{user.email}</p><Link to={`/funcionarios/usuarios/${user.id}`} className="mt-3 inline-flex text-sm font-semibold text-leaf hover:underline">Ver detalhes<span className="sr-only"> de {user.nome}</span></Link></li>)}</ul> : <p className="text-muted">Nenhum usuário retornado pela API.</p>)}
 
         {selected === 1 && <form onSubmit={create} className="space-y-5">
           <label className="block text-sm font-semibold text-mint" htmlFor="new-challenge-description">Descrição<textarea id="new-challenge-description" required minLength={5} value={description} onChange={(event) => setDescription(event.target.value)} rows={3} className={inputClass} /></label>
@@ -102,7 +111,7 @@ export default function EmployeeAccessPage() {
           <p className="mt-4 whitespace-pre-wrap break-words text-sm text-mint">{action.evidence}</p>
           {action.evidenceImage && /^data:image\/(jpeg|png|webp|gif);base64,/.test(action.evidenceImage) && <img src={action.evidenceImage} alt={`Evidência da ação de ${action.userName}`} className="mt-4 max-h-72 max-w-full rounded-xl object-contain" />}
           {action.opinion && <p className="mt-3 text-sm text-muted">Parecer: {action.opinion}</p>}
-          {selected === 4 && <form className="mt-5 space-y-3" onSubmit={(event) => { event.preventDefault(); const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null; void change(() => decideLocalAction(action.id, submitter?.value === "aprovar", opinions[action.id] || ""), "Análise registrada. O ranking local foi atualizado."); }}>
+          {selected === 4 && <form className="mt-5 space-y-3" onSubmit={(event) => { event.preventDefault(); const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null; if (!submitter || !["aprovar", "rejeitar"].includes(submitter.value)) { setError("Escolha Aprovar ação ou Rejeitar ação."); return; } void change(() => decideLocalAction(action.id, submitter.value === "aprovar", opinions[action.id] || ""), "Análise registrada. O ranking local foi atualizado."); }}>
             <label htmlFor={`opinion-${action.id}`} className="block text-sm font-semibold text-mint">Parecer da análise<textarea id={`opinion-${action.id}`} required minLength={5} rows={2} value={opinions[action.id] || ""} onChange={(event) => setOpinions((previous) => ({ ...previous, [action.id]: event.target.value }))} className={inputClass} /></label>
             <div className="flex flex-wrap gap-3"><button type="submit" value="aprovar" disabled={loading} className={buttonClass}>Aprovar ação</button><button type="submit" value="rejeitar" disabled={loading} className="rounded-full border border-red-300/40 px-5 py-3 text-sm font-bold text-red-200 disabled:opacity-50">Rejeitar ação</button></div>
           </form>}

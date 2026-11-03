@@ -74,7 +74,7 @@ export default function ContactPage() {
 
           {submitted && (
             <p role="status" className="mt-5 rounded-xl border border-leaf/30 bg-leaf/10 p-4 text-sm text-leaf">
-              Formulário validado. Como este projeto não possui integração com API, a mensagem não foi enviada.
+              Formulário validado. O envio de mensagens de contato ainda não está disponível; sua mensagem não foi enviada.
             </p>
           )}
 

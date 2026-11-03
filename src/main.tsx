@@ -9,6 +9,8 @@ import AboutPage from "./pages/AboutPage";
 import AdminManagementPage from "./pages/AdminManagementPage";
 import EmployeeGate from "./components/EmployeeGate";
 import EmployeeAccessPage from "./pages/EmployeeAccessPage";
+import ApiDirectoryPage from "./pages/ApiDirectoryPage";
+import ApiRecordPage from "./pages/ApiRecordPage";
 import AvatarPage from "./pages/AvatarPage";
 import ChallengesPage from "./pages/ChallengesPage";
 import ContactPage from "./pages/ContactPage";
@@ -35,6 +37,9 @@ const router = createBrowserRouter([
       { path: "cadastro", element: <RegistrationPage /> },
       { path: "perfil", element: <ProfilePage /> },
       { path: "grupos/novo", element: <GroupPage /> },
+      { path: "grupos", element: <ApiDirectoryPage /> },
+      { path: "grupos/:id", element: <ApiRecordPage kind="group" /> },
+      { path: "funcionarios/usuarios/:id", element: <EmployeeGate><ApiRecordPage kind="user" /></EmployeeGate> },
       { path: "desafios", element: <ChallengesPage /> },
       { path: "integrantes", element: <TeamPage /> },
       { path: "solucao", element: <SolutionPage /> },

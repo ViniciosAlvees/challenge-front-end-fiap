@@ -1,11 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { getCurrentAccount, getStoredAccount } from "../services/api";
+import { getCurrentAccount } from "../services/api";
 import type { AccountUser } from "../services/api";
 
 type AuthContextValue = {
   user: AccountUser | null;
   setUser: (user: AccountUser | null) => void;
   isLoading: boolean;
+  errorMessage: string;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -17,18 +18,20 @@ type AuthProviderProps = {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AccountUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     let active = true;
     getCurrentAccount()
       .then((account) => {
         if (active) {
-          setUser(account ?? getStoredAccount());
+          setUser(account);
         }
       })
-      .catch(() => {
+      .catch((cause: unknown) => {
         if (active) {
-          setUser(getStoredAccount());
+          setUser(null);
+          setErrorMessage(cause instanceof Error ? cause.message : "Não foi possível verificar sua sessão.");
         }
       })
       .finally(() => {
@@ -41,7 +44,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, isLoading }}>
+    <AuthContext.Provider value={{ user, setUser, isLoading, errorMessage }}>
       {children}
     </AuthContext.Provider>
   );

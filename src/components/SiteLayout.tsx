@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { NavLink, Outlet } from "react-router-dom";
 
 const navigation = [
@@ -7,6 +8,7 @@ const navigation = [
   { to: "/avatar", label: "Avatar" },
   { to: "/cadastro", label: "Conta" },
   { to: "/perfil", label: "Perfil" },
+  { to: "/grupos", label: "Grupos" },
   { to: "/grupos/novo", label: "Cadastrar grupo" },
   { to: "/desafios", label: "Desafios" },
   { to: "/integrantes", label: "Integrantes" },
@@ -17,10 +19,13 @@ const navigation = [
 
 export default function SiteLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const location = useLocation();
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-forest/90 backdrop-blur-xl">
+      <header onKeyDown={(event) => { if (event.key === "Escape" && menuOpen) { setMenuOpen(false); menuButton.current?.focus(); } }} className="sticky top-0 z-20 border-b border-white/10 bg-forest/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
           <NavLink
             to="/"
@@ -33,25 +38,26 @@ export default function SiteLayout() {
           </NavLink>
 
           <button
+            ref={menuButton}
             type="button"
             aria-expanded={menuOpen}
             aria-controls="main-navigation"
-            aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
             onClick={() => setMenuOpen((open) => !open)}
-            className="rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-mint transition hover:border-leaf/60 hover:text-leaf md:hidden"
+            className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-mint transition hover:border-leaf/60 hover:text-leaf focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf"
           >
-            {menuOpen ? "Fechar" : "Menu"}
+            Menu
           </button>
 
           <nav
             id="main-navigation"
-            className={`${menuOpen ? "flex" : "hidden"} w-full flex-col gap-1 md:flex md:w-auto md:flex-row md:items-center md:gap-1`}
+            aria-label="Navegação principal"
+            className={`${menuOpen ? "grid" : "hidden"} max-h-[calc(100dvh-6rem)] w-full gap-1 overflow-y-auto border-t border-white/10 pt-3 sm:grid-cols-2 lg:grid-cols-3`}
           >
             {navigation.map(({ to, label }) => (
               <NavLink
                 key={to}
                 to={to}
-                end={to === "/solucao"}
+                end={to === "/solucao" || to === "/grupos"}
                 onClick={() => setMenuOpen(false)}
                 className={({ isActive }) =>
                   `rounded-full px-3 py-2 text-sm font-medium transition ${
