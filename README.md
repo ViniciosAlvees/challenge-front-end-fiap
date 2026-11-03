@@ -1,115 +1,111 @@
 # Soul Up — sustentabilidade em comunidade
 
-A Soul Up é uma proposta de rede social sustentável que transforma ações ambientais em experiências sociais e coletivas. A plataforma organiza desafios, grupos, evidências, validação comunitária e reconhecimento para aproximar as pessoas do impacto positivo.
+A Soul Up conecta pessoas a ações ambientais por meio de desafios, grupos e reconhecimento. Este projeto é uma SPA desenvolvida para a Entrega 4 de Front-End Design Engineering do Challenge FIAP 2026.
 
-![Logo Soul Up](./public/icon/souldup.png)
+![Marca Soul Up](./public/icon/souldup.png)
 
-## Tecnologias
+## Tecnologias utilizadas
 
-- React 19 e Vite
-- TypeScript
-- Tailwind CSS 4
-- React Router DOM
-- React Hook Form
-- Fetch API nativa para a camada de integração REST
-- Git e GitHub
+- React 19, Vite e TypeScript com verificação estrita de tipos.
+- Tailwind CSS 4 para layout e responsividade.
+- React Router DOM para rotas estáticas e dinâmicas.
+- React Hook Form para o formulário de contato e de conta.
+- Fetch API nativa para requisições HTTP; sem Axios ou bibliotecas externas de UI.
+- Node.js para a função de acesso de funcionários e os testes automatizados.
+- Git e GitHub para versionamento.
 
-<<<<<<< HEAD
-Não são usados Axios ou frameworks externos de UI. A integração REST usa `fetch` e encaminha chamadas `/api` para `https://challeng-sprin4-java.onrender.com`.
-=======
-Não são usados Axios ou frameworks externos de UI. A integração usa `fetch` e está configurada para a API Java publicada em `https://challeng-sprin4-java.onrender.com`.
-Os dados da equipe usam interfaces TypeScript compostas por intersection types; a simulação do Avatar usa union types.
->>>>>>> 716104757b96e6b7012366d889b0e1b5396d332b
+## Como Usar
 
-## Páginas e recursos
+### Links da entrega
 
-- Início: apresentação e acesso rápido às áreas do projeto.
-- Sobre: problema, proposta, pilares, jornada, inovação e oportunidades de capacitação.
-- Solução: frentes da proposta e páginas dinâmicas de detalhes em `/solucao/:slug`.
-- Avatar: explicação do mentor digital da plataforma.
-- Conta: criação de conta com nome, e-mail e senha, entrada em conta existente e encerramento de sessão.
-- Perfil: nome, e-mail e pontuação da conta conectada.
-- Cadastrar grupo: pesquisa usuários por nome ou e-mail e cria grupos com os membros selecionados.
-- Desafios: catálogo interativo com evidência por foto e registro local de conclusão e pontuação.
-- Integrantes: nomes, RMs, fotos e perfis profissionais da equipe.
-- FAQ: perguntas e respostas em acordeão.
-- Contato: formulário tipado com validação de nome, e-mail, assunto e mensagem.
+| Recurso | Endereço ou situação |
+|---|---|
+| Repositório do front-end | [challenge-front-end-fiap](https://github.com/alvesdemacedoenzo-beep/challenge-front-end-fiap) — conferir acesso público sem login antes de entregar |
+| Repositório Java | [challeng-sprin4-Java](https://github.com/velascoguzmanvictorhugo-ui/challeng-sprin4-Java) |
+| API Java publicada | [API Soul Up](https://challeng-sprin4-java.onrender.com) |
+| Deploy na Vercel | **Pendente: inserir a URL real após a publicação e os testes online.** |
+| Vídeo no YouTube | **Pendente: gravar a demonstração de até 3 minutos e inserir o link acessível.** |
 
-<<<<<<< HEAD
-O formulário de contato e a evidência dos desafios são demonstrações locais; fotos não são enviadas ao servidor. A conclusão e a pontuação dos desafios ficam salvas no navegador por conta. A API Java publica `GET` e `POST /usuarios` e `GET` e `POST /grupos`. A listagem de usuários usa `GET /usuarios`; a criação de grupo usa `POST /grupos` com `nome`. No backend atual, o DAO de grupos persiste somente o nome e a data, portanto os membros selecionados na interface ainda não ficam associados após a criação. O endpoint de usuários espera `id`, `nome` e `email`; não há endpoint de autenticação ou senha publicado, então login real não pode ser realizado por essa API. Em desenvolvimento, o proxy do Vite e, em produção, o rewrite do Vercel encaminham `/api` para a URL Java.
-=======
-O formulário de contato e o simulador são demonstrações locais. A página de cadastro consulta usuários e grupos e envia novos registros com os dados do formulário: nome e e-mail para usuários; nome para grupos. O ID dos usuários é gerado pelo banco de dados. A aplicação encaminha chamadas pelo prefixo `/api` usando o proxy do Vite em desenvolvimento e um rewrite do Vercel em produção, evitando depender de CORS habilitado no navegador.
+Os dois últimos itens ainda são pendências da entrega; não representam links já publicados.
 
-Na verificação feita em 26/10/2026, `GET /grupos` respondeu com sucesso, mas `GET /usuarios` retornou HTTP 500. A tela informa erros da API sem apresentar uma lista falsa; o endpoint de usuários precisa ser verificado no backend antes da entrega.
->>>>>>> 716104757b96e6b7012366d889b0e1b5396d332b
+### Instalação e execução
 
-## Como executar
-
-Requisitos: Node.js 20.19+ ou 22.12+ e npm.
+Requisitos: Node.js 22.18+ ou 24+ e npm.
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Para executar localmente, copie `.env.example` para `.env.local`; o proxy encaminha `/api` para a API Java publicada. Reinicie o servidor de desenvolvimento após alterar variáveis de ambiente.
-
-Para validar a versão de produção:
+O aplicativo usa `/api` por padrão. O proxy do Vite encaminha as requisições para a API Java. Opcionalmente, copie `.env.example` para `.env.local` para personalizar `VITE_API_BASE_URL`. Em produção, o `vercel.json` encaminha as mesmas rotas e fornece fallback para a SPA. Reinicie o Vite após alterar a configuração.
 
 ```bash
+npm test
 npm run build
 npm run preview
+npm run check:api
 ```
 
-O `vercel.json` configura o fallback necessário para abrir diretamente as rotas da SPA em produção. A implantação pública ainda está pendente.
+`npm test` verifica autenticação, contrato HTTP, validação das respostas e regras de gestão local. `check:api` faz apenas consultas de leitura e informa o status dos endpoints, sem exibir os dados pessoais dos registros.
 
-## Estrutura do projeto
+### Navegação e funcionalidades
+
+- **Menu:** abre e fecha os links das páginas em qualquer resolução; fecha ao navegar ou pressionar Escape.
+- **Home, Sobre, FAQ e Integrantes:** apresentação da proposta e da equipe.
+- **Solução e Avatar:** conteúdo e prototipação navegável da proposta, com detalhes em `/solucao/:slug`.
+- **Grupos:** listagem real da API em `/grupos`, detalhe em `/grupos/:id` e cadastro em `/grupos/novo`. O cadastro envia os IDs dos participantes e consulta novamente a API para verificar os vínculos.
+- **Conta e Perfil:** cadastro e autenticação por senha. O login somente é aceito quando `/auth/login` e `/auth/me` confirmam a sessão; não existe entrada apenas por e-mail nem autenticação pelo armazenamento do navegador.
+- **Acesso Funcionário:** consulta de usuários e seus detalhes, criação e ativação local de desafios, consulta e análise local de ações e ranking local. A senha inicial solicitada é `123456789`. Leia [FUNCIONARIOS.md](./FUNCIONARIOS.md).
+- **Gestão da API:** acessível a partir da área de funcionários; apresenta usuários, grupos e desafios e confirma exclusões consultando o servidor novamente.
+- **Desafios:** participação com descrição e foto local, sujeita à aprovação de funcionário. Os pontos locais e os pontos da API são apresentados separadamente no perfil.
+- **Contato:** formulário demonstrativo com validação, sem envio de mensagens.
+
+### Integração e atualização do Java
+
+O código Java consultado na branch `main`, commit `107b64c689ccd649fc51350d87daf0e4f90bbde5`, oferece listagens em `GET /usuarios`, `GET /grupos` e `GET /desafios`; escrita com `POST /usuarios` e `POST /grupos`; exclusão com `DELETE /usuarios?id=...` e `DELETE /grupos?id=...`.
+
+As telas de detalhe consultam os dados atuais das listagens e selecionam o registro pelo ID. Identificadores inválidos ou inexistentes têm feedback próprio. Respostas inválidas, falhas HTTP e listas vazias são tratadas separadamente, sem fabricar registros.
+
+**O Java publicado ainda precisa receber a correção de autenticação e membros.** O pacote em [backend-patches](./backend-patches/README.md) contém o patch e as instruções de migração e publicação. Até essa atualização, o front-end informa a ausência do serviço de autenticação e não simula um login bem-sucedido. Contas antigas sem credencial exigem um fluxo de recuperação de identidade; não recebem senha automática.
+
+Desafios, fotos, pareceres e ranking local continuam armazenados neste navegador, sem sincronização automática com o SQLite do Python ou com outros dispositivos. Esses dados de demonstração não substituem a persistência e a autorização do backend. A API Java é usada para as listagens, detalhes e operações de escrita dos cadastros.
+
+## Estrutura de pastas
 
 ```text
-.
-├── public/
-│   └── icon/                # Marca e ícones
-├── src/
-│   ├── assets/team/         # Fotos da equipe processadas pelo Vite
-│   ├── components/          # Layout e componentes reutilizáveis
-│   ├── data/                # Conteúdo tipado da aplicação
-│   ├── pages/               # Páginas e rotas da SPA
-│   ├── services/            # Camada tipada de acesso à API
-│   ├── App.tsx              # Rotas React Router
-│   ├── index.css            # Tailwind CSS e tema
-│   └── main.tsx             # Entrada React
-├── index.html
-├── vercel.json
-├── package.json
-├── tsconfig*.json
-└── vite.config.ts
+api/                 # Função da Vercel para acesso de funcionários
+backend-patches/     # Correções Java e procedimento de aplicação
+public/icon/         # Marca e ícones
+scripts/             # Verificação da API e preparação da entrega
+server/              # Autenticação dos funcionários no servidor Node
+src/
+  assets/team/       # Fotos dos integrantes
+  components/        # Layout, proteção e feedback reutilizáveis
+  contexts/          # Sessão de usuário verificada no servidor
+  data/              # Conteúdo e interfaces da equipe
+  pages/             # Páginas da SPA
+  services/          # Integração HTTP e regras locais tipadas
+tests/               # Testes automatizados
 ```
 
-## Repositório, API, deploy e apresentação
+## Autores e créditos
 
-- GitHub: [alvesdemacedoenzo-beep/challenge-front-end-fiap](https://github.com/alvesdemacedoenzo-beep/challenge-front-end-fiap)
-<<<<<<< HEAD
-- API Java: [challeng-sprin4-java.onrender.com](https://challeng-sprin4-java.onrender.com) — cadastro e autenticação por `POST /usuarios`, `POST /auth/login`, `GET /auth/me` e `POST /auth/logout`.
-=======
-- API Java: [URL base](https://challeng-sprin4-java.onrender.com).
-- Endpoint de usuários: [`/usuarios`](https://challeng-sprin4-java.onrender.com/usuarios) — usado para `GET` e `POST`.
-- Endpoint de grupos: [`/grupos`](https://challeng-sprin4-java.onrender.com/grupos) — usado para `GET` e `POST`.
->>>>>>> 716104757b96e6b7012366d889b0e1b5396d332b
-- Aplicação na Vercel: **pendente de implantação e envio da URL pela equipe.**
-- Vídeo de apresentação (até 3 minutos): **link do YouTube pendente de envio pela equipe.**
-
-## Integrantes
+Equipe **Nexus Elite**, turma **1TDSPY**, FIAP. Os dados da equipe utilizam interfaces e intersection types; estados de autenticação e ações utilizam union types.
 
 | Integrante | RM | Foto | LinkedIn | GitHub |
-|---|---:|---|---|---|
-| Raphael Ferreira Tavares | 569767 · 1TDSPY | ![Raphael](./src/assets/team/raphael.png) | [Perfil](https://www.linkedin.com/in/raphael-ferreira-0111323b8/) | [raph-ferreira](https://github.com/raph-ferreira) |
-| Bryan Germano | 569716 · 1TDSPY | ![Bryan](./src/assets/team/bryan.png) | [Perfil](https://www.linkedin.com/in/bryan-germano-84016729b/) | [BryanGermano](https://github.com/BryanGermano) |
-| Enzo Macedo | 569427 · 1TDSPY | ![Enzo](./src/assets/team/enzo.png) | [Perfil](https://www.linkedin.com/in/enzo-alves-de-macedo-408359356/) | [alvesdemacedoenzo-beep](https://github.com/alvesdemacedoenzo-beep) |
-| Victor Hugo Velasco Guzman | 573173 · 1TDSPY | ![Victor](./src/assets/team/victor.png) | [Perfil](https://www.linkedin.com/in/victor-hugo-velasco-guzman-296256235/) | [velascoguzmanvictorhugo-ui](https://github.com/velascoguzmanvictorhugo-ui) |
-| Vinicios Alves | 573002 · 1TDSPY | ![Vinicios](./src/assets/team/vinicios.png) | [Perfil](https://www.linkedin.com/in/vinicios-alves-dos-santos-434128327/) | [ViniciosAlvees](https://github.com/ViniciosAlvees) |
+|---|---|---|---|---|
+| Raphael Ferreira Tavares | 569767 | ![Raphael](./src/assets/team/raphael.png) | [Perfil](https://www.linkedin.com/in/raphael-ferreira-0111323b8/) | [raph-ferreira](https://github.com/raph-ferreira) |
+| Bryan Germano | 569716 | ![Bryan](./src/assets/team/bryan.png) | [Perfil](https://www.linkedin.com/in/bryan-germano-84016729b/) | [BryanGermano](https://github.com/BryanGermano) |
+| Enzo Macedo | 569427 | ![Enzo](./src/assets/team/enzo.png) | [Perfil](https://www.linkedin.com/in/enzo-alves-de-macedo-408359356/) | [alvesdemacedoenzo-beep](https://github.com/alvesdemacedoenzo-beep) |
+| Victor Hugo Velasco Guzman | 573173 | ![Victor](./src/assets/team/victor.png) | [Perfil](https://www.linkedin.com/in/victor-hugo-velasco-guzman-296256235/) | [velascoguzmanvictorhugo-ui](https://github.com/velascoguzmanvictorhugo-ui) |
+| Vinicios Alves | 573002 | ![Vinicios](./src/assets/team/vinicios.png) | [Perfil](https://www.linkedin.com/in/vinicios-alves-dos-santos-434128327/) | [ViniciosAlvees](https://github.com/ViniciosAlvees) |
+
+Marca e imagens de equipe fornecidas com o projeto. Houve apoio do Codex na implementação e revisão técnica; os integrantes devem revisar e compreender as alterações e registrar seu uso de IA conforme as exigências de cada disciplina.
 
 ## Contato
 
-Para dúvidas sobre o projeto, entre em contato com a equipe pelos perfis vinculados acima ou pelo e-mail [soulup@gmail.com](mailto:soulup@gmail.com).
+[soulup@gmail.com](mailto:soulup@gmail.com) e perfis profissionais dos integrantes acima.
 
-© 2026 — Nexus Elite · FIAP — Análise e Desenvolvimento de Sistemas.
+## Preparação da entrega
+
+Antes de enviar, publique a API corrigida e o front-end, valide o acesso público, preencha os links pendentes e revise [ENTREGA_SPRINT4.md](./ENTREGA_SPRINT4.md). O ZIP deve ter até 50 MB, incluir o código e as configurações e excluir `node_modules`, credenciais, caches e arquivos temporários. O envio deve ocorrer pelo Portal do Aluno.

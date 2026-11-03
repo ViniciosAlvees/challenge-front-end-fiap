@@ -1,0 +1,570 @@
+diff --git a/INTEGRACAO_FRONTEND.md b/INTEGRACAO_FRONTEND.md
+new file mode 100644
+index 0000000..7f90517
+--- /dev/null
++++ b/INTEGRACAO_FRONTEND.md
+@@ -0,0 +1,27 @@
++# Correcao de autenticacao e membros dos grupos
++
++Esta alteracao adiciona cadastro com senha, autenticacao por sessao HttpOnly e persistencia de membros. Foi preparada a partir da branch main, commit 107b64c689ccd649fc51350d87daf0e4f90bbde5.
++
++## Antes de publicar
++
++1. Fazer backup e revisar com o responsavel pelo Oracle a migracao `SoulUp_Menu/database/sprint4-auth-members.sql`. Ela cria duas tabelas novas com chaves estrangeiras e nao remove dados. Executar uma unica vez, antes do deploy; nao executar novamente sem conferir as tabelas existentes.
++2. Executar `mvn test` em `SoulUp_Menu` (Java 17+ e Maven). Os testes de autenticacao usam mocks e nao acessam o Oracle. A migracao e as transacoes de cadastro e grupos ainda precisam ser verificadas em banco de homologacao.
++3. Configurar `FRONTEND_ORIGINS` com a URL exata do front-end, sem barra final. Multiplas origens sao separadas por virgula. Usar `/api` no front-end para aproveitar o proxy e manter os cookies na mesma origem.
++4. Em HTTPS, manter `SESSION_COOKIE_SECURE=true`. Somente para desenvolvimento HTTP, definir `SESSION_COOKIE_SECURE=false`.
++5. Publicar a API corrigida e validar cadastro, login, `/auth/me`, logout e membros em homologacao antes da producao.
++
++## Contrato
++
++- `POST /usuarios`: `{ "nome": "...", "email": "...", "senha": "..." }`. Gera o ID em transacao e persiste apenas o hash PBKDF2 da senha. Retorna 201 com a conta sem a senha. Rejeita e-mail existente com 409.
++- `POST /auth/login`: `{ "email": "...", "senha": "..." }`. Valida o hash e cria uma nova sessao. Senha incorreta retorna 401.
++- `GET /auth/me`: retorna a conta da sessao atual, ou 401. O cliente nao pode autenticar apenas editando o armazenamento local.
++- `POST /auth/logout`: invalida a sessao e retorna 204.
++- `POST /grupos`: aceita `nome` e `membros: [{ "id": 123 }]`; grupo e vinculos sao persistidos em uma unica transacao. Retorna o ID efetivamente cadastrado. Membros inexistentes ou duplicados nao deixam grupo parcial no banco.
++- `GET /grupos`: retorna os membros persistidos.
++- `DELETE /usuarios?id=123` e `DELETE /grupos?id=123`: vinculam o parametro explicitamente.
++
++Contas antigas sem registro em `tb_soulup_credencial` nao recebem senha automatica e nao podem ser assumidas apenas pelo e-mail. A recuperacao dessas contas exige um fluxo de verificacao de identidade separado.
++
++As operacoes administrativas ja existentes na API ainda precisam de autorizacao propria no backend antes de uso com dados sensiveis. A senha da interface de funcionarios protege o endpoint Node, mas nao transforma os endpoints Java publicos em endpoints privados. Nao existe integracao remota de pareceres e ranking local neste patch.
++
++Nao foram executadas alteracoes no banco de producao nem publicado deploy por este procedimento.
+diff --git a/SoulUp_Menu/database/sprint4-auth-members.sql b/SoulUp_Menu/database/sprint4-auth-members.sql
+new file mode 100644
+index 0000000..626ffe6
+--- /dev/null
++++ b/SoulUp_Menu/database/sprint4-auth-members.sql
+@@ -0,0 +1,15 @@
++-- Oracle: executar uma vez antes de publicar esta versao da API.
++-- Nao atribui senhas a contas antigas e nao apaga dados existentes.
++CREATE TABLE tb_soulup_credencial (
++    id_usuario NUMBER PRIMARY KEY,
++    senha_hash VARCHAR2(255) NOT NULL,
++    CONSTRAINT fk_soulup_credencial_usuario FOREIGN KEY (id_usuario) REFERENCES tb_usuario(id_usuario) ON DELETE CASCADE
++);
++
++CREATE TABLE tb_soulup_grupo_membro (
++    id_grupo NUMBER NOT NULL,
++    id_usuario NUMBER NOT NULL,
++    PRIMARY KEY (id_grupo,id_usuario),
++    CONSTRAINT fk_soulup_membro_grupo FOREIGN KEY (id_grupo) REFERENCES tb_grupo(id_grupo) ON DELETE CASCADE,
++    CONSTRAINT fk_soulup_membro_usuario FOREIGN KEY (id_usuario) REFERENCES tb_usuario(id_usuario) ON DELETE CASCADE
++);
+diff --git a/SoulUp_Menu/src/main/java/br/com/fiap/soulup/config/ApiExceptionHandler.java b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/config/ApiExceptionHandler.java
+new file mode 100644
+index 0000000..c266045
+--- /dev/null
++++ b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/config/ApiExceptionHandler.java
+@@ -0,0 +1,14 @@
++package br.com.fiap.soulup.config;
++
++import org.springframework.http.ResponseEntity;
++import org.springframework.web.bind.annotation.ExceptionHandler;
++import org.springframework.web.bind.annotation.RestControllerAdvice;
++import java.util.Map;
++
++@RestControllerAdvice
++public class ApiExceptionHandler {
++    @ExceptionHandler(IllegalArgumentException.class)
++    public ResponseEntity<?> invalid(IllegalArgumentException error) { return ResponseEntity.badRequest().body(Map.of("message",error.getMessage())); }
++    @ExceptionHandler(IllegalStateException.class)
++    public ResponseEntity<?> unavailable(IllegalStateException error) { return ResponseEntity.status(503).body(Map.of("message","Servico indisponivel. Verifique a configuracao do servidor e a migracao do banco.")); }
++}
+diff --git a/SoulUp_Menu/src/main/java/br/com/fiap/soulup/config/AuthRequestFilter.java b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/config/AuthRequestFilter.java
+new file mode 100644
+index 0000000..a097af8
+--- /dev/null
++++ b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/config/AuthRequestFilter.java
+@@ -0,0 +1,38 @@
++package br.com.fiap.soulup.config;
++
++import jakarta.servlet.FilterChain;
++import jakarta.servlet.ServletException;
++import jakarta.servlet.http.HttpServletRequest;
++import jakarta.servlet.http.HttpServletResponse;
++import java.io.IOException;
++import java.net.URI;
++import java.util.Arrays;
++import org.springframework.stereotype.Component;
++import org.springframework.web.filter.OncePerRequestFilter;
++
++@Component
++public class AuthRequestFilter extends OncePerRequestFilter {
++    @Override
++    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
++        boolean auth=request.getRequestURI().startsWith("/auth/");
++        boolean register=request.getRequestURI().equals("/usuarios") && request.getMethod().equals("POST");
++        if (auth || register) {
++            response.setHeader("Cache-Control","no-store");
++            String origin=request.getHeader("Origin");
++            if (!request.getMethod().equals("GET") && origin!=null && !allowed(origin,request)) { response.sendError(403); return; }
++        }
++        chain.doFilter(request,response);
++    }
++    private boolean allowed(String origin,HttpServletRequest request) {
++        try {
++            URI uri=URI.create(origin);
++            if (!Arrays.asList("http","https").contains(uri.getScheme())) return false;
++            String forwarded=request.getHeader("X-Forwarded-Host");
++            String host=forwarded==null ? request.getHeader("Host") : forwarded;
++            if (uri.getAuthority()!=null && uri.getAuthority().equals(host)) return true;
++            String configured=System.getenv("FRONTEND_ORIGINS");
++            String origins=configured==null ? "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173" : configured;
++            return Arrays.stream(origins.split(",")).map(String::trim).anyMatch(origin::equals);
++        } catch (IllegalArgumentException e) { return false; }
++    }
++}
+diff --git a/SoulUp_Menu/src/main/java/br/com/fiap/soulup/controller/AuthController.java b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/controller/AuthController.java
+new file mode 100644
+index 0000000..a142551
+--- /dev/null
++++ b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/controller/AuthController.java
+@@ -0,0 +1,51 @@
++package br.com.fiap.soulup.controller;
++
++import br.com.fiap.soulup.dao.AccountDAO;
++import br.com.fiap.soulup.dominio.Validador;
++import br.com.fiap.soulup.service.PasswordHash;
++import jakarta.servlet.http.HttpServletRequest;
++import jakarta.servlet.http.HttpSession;
++import org.springframework.http.HttpStatus;
++import org.springframework.http.ResponseEntity;
++import org.springframework.web.bind.annotation.*;
++
++@RestController
++@RequestMapping("/auth")
++public class AuthController {
++    private final AccountDAO accounts;
++    private static final String DUMMY_HASH = PasswordHash.create("invalid-account-placeholder");
++    public AuthController() { this(new AccountDAO()); }
++    AuthController(AccountDAO accounts) { this.accounts = accounts; }
++
++    public record LoginRequest(String email, String senha) {}
++
++    @PostMapping("/login")
++    public ResponseEntity<?> login(@RequestBody LoginRequest body, HttpServletRequest request) {
++        HttpSession previous = request.getSession(false);
++        if (previous != null) previous.invalidate();
++        if (body.email() == null || body.senha() == null || body.email().length() > 254 || body.senha().length() > 72) return ResponseEntity.badRequest().build();
++        AccountDAO.Credential credential = accounts.findByEmail(body.email().trim().toLowerCase(java.util.Locale.ROOT));
++        boolean valid = PasswordHash.matches(body.senha(), credential == null ? DUMMY_HASH : credential.hash());
++        if (credential == null || !valid) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
++        HttpSession session = request.getSession(true);
++        session.setAttribute("soulupUserId", credential.account().getId());
++        session.setMaxInactiveInterval(1800);
++        return ResponseEntity.ok(credential.account());
++    }
++
++    @GetMapping("/me")
++    public ResponseEntity<Validador> current(HttpServletRequest request) {
++        HttpSession session = request.getSession(false);
++        if (session == null || !(session.getAttribute("soulupUserId") instanceof Integer id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
++        Validador account = accounts.findById(id);
++        if (account == null) { session.invalidate(); return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); }
++        return ResponseEntity.ok(account);
++    }
++
++    @PostMapping("/logout")
++    public ResponseEntity<Void> logout(HttpServletRequest request) {
++        HttpSession session = request.getSession(false);
++        if (session != null) session.invalidate();
++        return ResponseEntity.noContent().build();
++    }
++}
+diff --git a/SoulUp_Menu/src/main/java/br/com/fiap/soulup/controller/GrupoController.java b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/controller/GrupoController.java
+index 2cf7c67..6a5a5d6 100644
+--- a/SoulUp_Menu/src/main/java/br/com/fiap/soulup/controller/GrupoController.java
++++ b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/controller/GrupoController.java
+@@ -38,7 +38,7 @@ public class GrupoController {
+ 
+ 
+     @DeleteMapping
+-    public ResponseEntity<Void> excluir(int id) {
++    public ResponseEntity<Void> excluir(@RequestParam int id) {
+         grupoService.excluir(id);
+         return ResponseEntity.noContent().build();
+     }
+diff --git a/SoulUp_Menu/src/main/java/br/com/fiap/soulup/controller/UsuarioController.java b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/controller/UsuarioController.java
+index 52d60b3..e7678be 100644
+--- a/SoulUp_Menu/src/main/java/br/com/fiap/soulup/controller/UsuarioController.java
++++ b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/controller/UsuarioController.java
+@@ -1,6 +1,8 @@
+ package br.com.fiap.soulup.controller;
+ 
+ import br.com.fiap.soulup.dao.UsuarioDAO;
++import br.com.fiap.soulup.dao.AccountDAO;
++import br.com.fiap.soulup.service.PasswordHash;
+ import br.com.fiap.soulup.dominio.Validador;
+ import br.com.fiap.soulup.service.UsuarioService;
+ import org.springframework.http.HttpStatus;
+@@ -24,19 +26,22 @@ public class UsuarioController {
+         return ResponseEntity.ok(usuarioService.listar());
+     }
+ 
++    public record RegisterRequest(String nome, String email, String senha) {}
++
+     @PostMapping
+-    public ResponseEntity salvar(@RequestBody Validador usuario) {
++    public ResponseEntity<?> salvar(@RequestBody RegisterRequest usuario) {
+         try {
+-            usuarioService.adicionar(usuario);
++            if (usuario.nome() == null || usuario.nome().trim().length() < 2 || usuario.nome().length() > 100 || usuario.email() == null || usuario.email().length() > 254 || !usuario.email().trim().matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")) return ResponseEntity.badRequest().build();
++            var account = new AccountDAO().register(usuario.nome().trim(), usuario.email().trim().toLowerCase(java.util.Locale.ROOT), PasswordHash.create(usuario.senha()));
+             return ResponseEntity
+                     .status(HttpStatus.CREATED)
+-                    .body(usuario);
++                    .body(account);
++        } catch (IllegalArgumentException e) {
++            return ResponseEntity.status(e.getMessage().contains("cadastrado") ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST).body(e.getMessage());
+         } catch (RuntimeException e) {
+-            System.out.println(e.getMessage());
+-            e.printStackTrace();
+             return ResponseEntity
+                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
+-                    .body(e.getMessage());
++                    .body("Cadastro indisponivel no momento.");
+         }
+     }
+ 
+@@ -48,7 +53,7 @@ public class UsuarioController {
+ 
+ 
+         @DeleteMapping
+-        public ResponseEntity<Void> excluir(int id) {
++        public ResponseEntity<Void> excluir(@RequestParam int id) {
+             usuarioService.excluir(id);
+             return ResponseEntity.noContent().build();
+         }
+diff --git a/SoulUp_Menu/src/main/java/br/com/fiap/soulup/dao/AccountDAO.java b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/dao/AccountDAO.java
+new file mode 100644
+index 0000000..968be4b
+--- /dev/null
++++ b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/dao/AccountDAO.java
+@@ -0,0 +1,54 @@
++package br.com.fiap.soulup.dao;
++
++import br.com.fiap.soulup.dominio.Validador;
++import java.sql.*;
++
++public class AccountDAO {
++    public record Credential(Validador account, String hash) {}
++
++    public Validador register(String name, String email, String hash) {
++        try (Connection connection = new ConnectionFactory().getConnection()) {
++            connection.setAutoCommit(false);
++            try {
++                try (Statement lock = connection.createStatement()) { lock.execute("LOCK TABLE tb_usuario IN EXCLUSIVE MODE"); }
++                try (PreparedStatement check = connection.prepareStatement("SELECT id_usuario FROM tb_usuario WHERE LOWER(email) = ?")) {
++                    check.setString(1, email);
++                    try (ResultSet result = check.executeQuery()) { if (result.next()) throw new IllegalArgumentException("E-mail ja cadastrado."); }
++                }
++                int id;
++                try (Statement query = connection.createStatement(); ResultSet result = query.executeQuery("SELECT NVL(MAX(id_usuario), 0) + 1 FROM tb_usuario")) { result.next(); id = result.getInt(1); }
++                try (PreparedStatement insert = connection.prepareStatement("INSERT INTO tb_usuario (id_usuario,nome,email) VALUES (?,?,?)")) {
++                    insert.setInt(1,id); insert.setString(2,name); insert.setString(3,email); insert.executeUpdate();
++                }
++                try (PreparedStatement insert = connection.prepareStatement("INSERT INTO tb_soulup_credencial (id_usuario,senha_hash) VALUES (?,?)")) {
++                    insert.setInt(1,id); insert.setString(2,hash); insert.executeUpdate();
++                }
++                connection.commit();
++                return new Validador(id, name, email);
++            } catch (Exception e) { connection.rollback(); throw e; }
++        } catch (SQLException e) { throw new IllegalStateException("Cadastro indisponivel. Verifique a migracao do banco de dados.", e); }
++    }
++
++    public Credential findByEmail(String email) {
++        String sql = "SELECT u.id_usuario,u.nome,u.email,c.senha_hash FROM tb_usuario u JOIN tb_soulup_credencial c ON c.id_usuario=u.id_usuario WHERE LOWER(u.email)=?";
++        try (Connection connection = new ConnectionFactory().getConnection(); PreparedStatement query = connection.prepareStatement(sql)) {
++            query.setString(1,email);
++            try (ResultSet result = query.executeQuery()) {
++                if (!result.next()) return null;
++                return new Credential(new Validador(result.getInt(1),result.getString(2),result.getString(3)),result.getString(4));
++            }
++        } catch (SQLException e) { throw new IllegalStateException("Autenticacao indisponivel. Verifique a migracao do banco de dados.", e); }
++    }
++
++    public Validador findById(int id) {
++        try (Connection connection = new ConnectionFactory().getConnection(); PreparedStatement query = connection.prepareStatement("SELECT id_usuario,nome,email,NVL(pontos_acumulados,0) FROM tb_usuario WHERE id_usuario=?")) {
++            query.setInt(1,id);
++            try (ResultSet result = query.executeQuery()) {
++                if (!result.next()) return null;
++                Validador account = new Validador(result.getInt(1),result.getString(2),result.getString(3));
++                account.adicionarPontos(result.getInt(4));
++                return account;
++            }
++        } catch (SQLException e) { throw new IllegalStateException("Consulta da conta indisponivel.", e); }
++    }
++}
+diff --git a/SoulUp_Menu/src/main/java/br/com/fiap/soulup/dao/GrupoDAO.java b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/dao/GrupoDAO.java
+index f1468ac..b31084a 100644
+--- a/SoulUp_Menu/src/main/java/br/com/fiap/soulup/dao/GrupoDAO.java
++++ b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/dao/GrupoDAO.java
+@@ -1,94 +1,70 @@
+ package br.com.fiap.soulup.dao;
+ 
+ import br.com.fiap.soulup.dominio.Grupo;
++import br.com.fiap.soulup.dominio.Validador;
+ import br.com.fiap.soulup.dominio.RepositorioGrupos;
+-
+-import java.sql.Connection;
+-import java.sql.Date;
+-import java.sql.PreparedStatement;
+-import java.sql.ResultSet;
+-import java.sql.SQLException;
++import java.sql.*;
+ import java.time.LocalDate;
+ import java.util.ArrayList;
++import java.util.LinkedHashMap;
++import java.util.HashSet;
+ 
+ public class GrupoDAO implements RepositorioGrupos {
+-
+-    private Connection conexao;
+-
+-    public GrupoDAO() {
+-        this.conexao = new ConnectionFactory().getConnection();
+-    }
+-
+     @Override
+     public void adicionar(Grupo grupo) {
+-        String sql = "INSERT INTO tb_grupo (id_grupo, nome, data_criacao) " +
+-                "SELECT NVL(MAX(id_grupo), 0) + 1, ?, ? FROM tb_grupo";
+-        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+-            stmt.setString(1, grupo.getNome());
+-            LocalDate data = (grupo.getDataCriacao() != null) ? grupo.getDataCriacao() : LocalDate.now();
+-            stmt.setDate(2, Date.valueOf(data));
+-            stmt.executeUpdate();
+-        } catch (SQLException e) {
+-            throw new RuntimeException("Erro ao adicionar grupo: " + e.getMessage());
+-        }
++        if (grupo.getNome() == null || grupo.getNome().trim().length() < 3 || grupo.getNome().length() > 100) throw new IllegalArgumentException("Nome do grupo invalido.");
++        try (Connection connection = new ConnectionFactory().getConnection()) {
++            connection.setAutoCommit(false);
++            try {
++                try (Statement lock = connection.createStatement()) { lock.execute("LOCK TABLE tb_grupo IN EXCLUSIVE MODE"); }
++                int id;
++                try (Statement query = connection.createStatement(); ResultSet result = query.executeQuery("SELECT NVL(MAX(id_grupo),0)+1 FROM tb_grupo")) { result.next(); id=result.getInt(1); }
++                LocalDate date = grupo.getDataCriacao() == null ? LocalDate.now() : grupo.getDataCriacao();
++                try (PreparedStatement insert = connection.prepareStatement("INSERT INTO tb_grupo (id_grupo,nome,data_criacao) VALUES (?,?,?)")) {
++                    insert.setInt(1,id); insert.setString(2,grupo.getNome().trim()); insert.setDate(3,Date.valueOf(date)); insert.executeUpdate();
++                }
++                var ids = new HashSet<Integer>();
++                if (grupo.getMembros() != null) for (Validador member : grupo.getMembros()) {
++                    if (member == null || member.getId() <= 0 || !ids.add(member.getId())) throw new IllegalArgumentException("Membro invalido ou duplicado.");
++                    try (PreparedStatement insert = connection.prepareStatement("INSERT INTO tb_soulup_grupo_membro (id_grupo,id_usuario) VALUES (?,?)")) {
++                        insert.setInt(1,id); insert.setInt(2,member.getId()); insert.executeUpdate();
++                    }
++                }
++                connection.commit(); grupo.setId(id); grupo.setDataCriacao(date);
++            } catch (Exception e) { connection.rollback(); throw e; }
++        } catch (SQLException e) { throw new IllegalStateException("Nao foi possivel cadastrar o grupo e seus membros.",e); }
+     }
+ 
+     @Override
+     public ArrayList<Grupo> listarTodos() {
+-        ArrayList<Grupo> lista = new ArrayList<>();
+-        String sql = "SELECT id_grupo, nome, data_criacao FROM tb_grupo ORDER BY id_grupo ASC";
+-
+-        try (PreparedStatement stmt = conexao.prepareStatement(sql);
+-             ResultSet rs = stmt.executeQuery()) {
+-
+-            while (rs.next()) {
+-                int id = rs.getInt("id_grupo");
+-                String nome = rs.getString("nome");
+-                Date dataSql = rs.getDate("data_criacao");
+-                LocalDate data = (dataSql != null) ? dataSql.toLocalDate() : LocalDate.now();
+-
+-                Grupo grupo = new Grupo(id, nome, data, 0);
+-                lista.add(grupo);
++        var groups = new LinkedHashMap<Integer,Grupo>();
++        String sql = "SELECT g.id_grupo,g.nome,g.data_criacao,u.id_usuario,u.nome,u.email FROM tb_grupo g LEFT JOIN tb_soulup_grupo_membro m ON m.id_grupo=g.id_grupo LEFT JOIN tb_usuario u ON u.id_usuario=m.id_usuario ORDER BY g.id_grupo,u.nome";
++        try (Connection connection = new ConnectionFactory().getConnection(); PreparedStatement query = connection.prepareStatement(sql); ResultSet result = query.executeQuery()) {
++            while (result.next()) {
++                int id=result.getInt(1);
++                Grupo group=groups.get(id);
++                if (group==null) { Date date=result.getDate(3); group=new Grupo(id,result.getString(2),date==null ? null : date.toLocalDate(),0); groups.put(id,group); }
++                int userId=result.getInt(4);
++                if (!result.wasNull()) group.adicionarMembro(new Validador(userId,result.getString(5),result.getString(6)));
+             }
+-        } catch (SQLException e) {
+-            throw new RuntimeException("Erro ao listar grupos: " + e.getMessage());
+-        }
+-        return lista;
++            return new ArrayList<>(groups.values());
++        } catch (SQLException e) { throw new IllegalStateException("Nao foi possivel consultar os grupos.",e); }
+     }
+ 
+     public void atualizar(Grupo grupo) {
+-        String sql = "UPDATE tb_grupo SET nome = ? WHERE id_grupo = ?";
+-        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+-            stmt.setString(1, grupo.getNome());
+-            stmt.setInt(2, grupo.getId());
+-            stmt.executeUpdate();
+-        } catch (SQLException e) {
+-            throw new RuntimeException("Erro ao atualizar grupo: " + e.getMessage());
+-        }
++        if (grupo.getId()<=0 || grupo.getNome()==null || grupo.getNome().trim().length()<3 || grupo.getNome().length()>100) throw new IllegalArgumentException("Grupo invalido.");
++        try (Connection connection=new ConnectionFactory().getConnection(); PreparedStatement query=connection.prepareStatement("UPDATE tb_grupo SET nome=? WHERE id_grupo=?")) {
++            query.setString(1,grupo.getNome().trim()); query.setInt(2,grupo.getId());
++            if(query.executeUpdate()==0) throw new IllegalArgumentException("Grupo nao encontrado.");
++        } catch(SQLException e) { throw new IllegalStateException("Nao foi possivel atualizar o grupo.",e); }
+     }
+ 
+     public void excluir(int id) {
+-        String sql = "DELETE FROM tb_grupo WHERE id_grupo = ?";
+-        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+-            stmt.setInt(1, id);
+-            stmt.executeUpdate();
+-        } catch (SQLException e) {
+-            throw new RuntimeException("Erro ao excluir grupo: " + e.getMessage());
+-        }
+-    }
+-
+-
+-    public ArrayList<Grupo> obterTodosGrupos() {
+-        return listarTodos();
+-    }
+-
+-    public void fecharConexao() {
+-        try {
+-            if (this.conexao != null && !this.conexao.isClosed()) {
+-                this.conexao.close();
+-            }
+-        } catch (SQLException e) {
+-            e.printStackTrace();
+-        }
++        if(id<=0) throw new IllegalArgumentException("Identificador invalido.");
++        try(Connection connection=new ConnectionFactory().getConnection(); PreparedStatement query=connection.prepareStatement("DELETE FROM tb_grupo WHERE id_grupo=?")) {
++            query.setInt(1,id); if(query.executeUpdate()==0) throw new IllegalArgumentException("Grupo nao encontrado.");
++        } catch(SQLException e) { throw new IllegalStateException("Nao foi possivel excluir o grupo. Verifique os registros vinculados.",e); }
+     }
++    public ArrayList<Grupo> obterTodosGrupos() { return listarTodos(); }
++    public void fecharConexao() { /* Cada operacao fecha sua propria conexao. */ }
+ }
+diff --git a/SoulUp_Menu/src/main/java/br/com/fiap/soulup/dominio/Usuario.java b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/dominio/Usuario.java
+index f85872d..e5b04e5 100644
+--- a/SoulUp_Menu/src/main/java/br/com/fiap/soulup/dominio/Usuario.java
++++ b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/dominio/Usuario.java
+@@ -15,6 +15,10 @@ public abstract class Usuario {
+         return id;
+     }
+ 
++    public void setId(int id) { this.id = id; }
++    public void setNome(String nome) { this.nome = nome; }
++    public void setEmail(String email) { this.email = email; }
++
+     public String lerNome() {
+         return nome;
+     }
+@@ -24,4 +28,4 @@ public abstract class Usuario {
+     }
+ 
+     public abstract String exibirPerfil();
+-}
+\ No newline at end of file
++}
+diff --git a/SoulUp_Menu/src/main/java/br/com/fiap/soulup/service/PasswordHash.java b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/service/PasswordHash.java
+new file mode 100644
+index 0000000..b32e44e
+--- /dev/null
++++ b/SoulUp_Menu/src/main/java/br/com/fiap/soulup/service/PasswordHash.java
+@@ -0,0 +1,40 @@
++package br.com.fiap.soulup.service;
++
++import java.security.MessageDigest;
++import java.security.SecureRandom;
++import java.util.Base64;
++import javax.crypto.SecretKeyFactory;
++import javax.crypto.spec.PBEKeySpec;
++
++public final class PasswordHash {
++    private static final int ROUNDS = 600000;
++    private static final SecureRandom RANDOM = new SecureRandom();
++    private PasswordHash() {}
++
++    public static String create(String password) {
++        if (password == null || password.length() < 8 || password.length() > 72) {
++            throw new IllegalArgumentException("A senha deve ter de 8 a 72 caracteres.");
++        }
++        byte[] salt = new byte[16];
++        RANDOM.nextBytes(salt);
++        return ROUNDS + "$" + Base64.getEncoder().encodeToString(salt) + "$" + Base64.getEncoder().encodeToString(derive(password, salt, ROUNDS));
++    }
++
++    public static boolean matches(String password, String stored) {
++        if (password == null || password.length() > 72 || stored == null) return false;
++        try {
++            String[] parts = stored.split("\\$");
++            if (parts.length != 3 || Integer.parseInt(parts[0]) != ROUNDS) return false;
++            byte[] salt = Base64.getDecoder().decode(parts[1]);
++            byte[] expected = Base64.getDecoder().decode(parts[2]);
++            return salt.length == 16 && expected.length == 32 && MessageDigest.isEqual(expected, derive(password, salt, ROUNDS));
++        } catch (IllegalArgumentException e) { return false; }
++    }
++
++    private static byte[] derive(String password, byte[] salt, int rounds) {
++        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, rounds, 256);
++        try { return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded(); }
++        catch (java.security.GeneralSecurityException e) { throw new IllegalStateException("Falha ao processar a senha.", e); }
++        finally { spec.clearPassword(); }
++    }
++}
+diff --git a/SoulUp_Menu/src/main/resources/application.properties b/SoulUp_Menu/src/main/resources/application.properties
+new file mode 100644
+index 0000000..3a74cb9
+--- /dev/null
++++ b/SoulUp_Menu/src/main/resources/application.properties
+@@ -0,0 +1,5 @@
++server.forward-headers-strategy=framework
++server.servlet.session.cookie.http-only=true
++server.servlet.session.cookie.same-site=strict
++server.servlet.session.cookie.secure=${SESSION_COOKIE_SECURE:true}
++server.servlet.session.timeout=30m
+diff --git a/SoulUp_Menu/src/test/java/br/com/fiap/soulup/controller/AuthControllerTest.java b/SoulUp_Menu/src/test/java/br/com/fiap/soulup/controller/AuthControllerTest.java
+new file mode 100644
+index 0000000..948043f
+--- /dev/null
++++ b/SoulUp_Menu/src/test/java/br/com/fiap/soulup/controller/AuthControllerTest.java
+@@ -0,0 +1,40 @@
++package br.com.fiap.soulup.controller;
++
++import br.com.fiap.soulup.dao.AccountDAO;
++import br.com.fiap.soulup.dominio.Validador;
++import br.com.fiap.soulup.service.PasswordHash;
++import org.junit.jupiter.api.Test;
++import org.springframework.mock.web.MockHttpServletRequest;
++import static org.junit.jupiter.api.Assertions.*;
++import static org.mockito.Mockito.*;
++
++class AuthControllerTest {
++    @Test void rejectsWrongPasswordAndDoesNotCreateSession() {
++        var dao=mock(AccountDAO.class);
++        when(dao.findByEmail("ana@example.test")).thenReturn(new AccountDAO.Credential(new Validador(1,"Ana","ana@example.test"),PasswordHash.create("correct-password")));
++        var request=new MockHttpServletRequest();
++        var result=new AuthController(dao).login(new AuthController.LoginRequest("ana@example.test","wrong-password"),request);
++        assertEquals(401,result.getStatusCode().value()); assertNull(request.getSession(false));
++    }
++    @Test void acceptsCorrectPasswordAndRotatesSession() {
++        var dao=mock(AccountDAO.class);
++        when(dao.findByEmail("ana@example.test")).thenReturn(new AccountDAO.Credential(new Validador(1,"Ana","ana@example.test"),PasswordHash.create("correct-password")));
++        var request=new MockHttpServletRequest(); String old=request.getSession().getId();
++        var result=new AuthController(dao).login(new AuthController.LoginRequest("ANA@example.test","correct-password"),request);
++        assertEquals(200,result.getStatusCode().value()); assertNotEquals(old,request.getSession().getId()); assertEquals(1,request.getSession().getAttribute("soulupUserId"));
++    }
++    @Test void rejectsAnonymousAndInvalidatesDeletedAccounts() {
++        var dao=mock(AccountDAO.class); var controller=new AuthController(dao); var request=new MockHttpServletRequest();
++        assertEquals(401,controller.current(request).getStatusCode().value());
++        request.getSession().setAttribute("soulupUserId",1);
++        assertEquals(401,controller.current(request).getStatusCode().value()); assertNull(request.getSession(false));
++    }
++    @Test void logoutInvalidatesSession() {
++        var request=new MockHttpServletRequest(); request.getSession().setAttribute("soulupUserId",1);
++        assertEquals(204,new AuthController(mock(AccountDAO.class)).logout(request).getStatusCode().value()); assertNull(request.getSession(false));
++    }
++    @Test void saltedHashesAreDistinctAndMalformedHashesFail() {
++        String first=PasswordHash.create("correct-password"), second=PasswordHash.create("correct-password");
++        assertNotEquals(first,second); assertTrue(PasswordHash.matches("correct-password",first)); assertFalse(PasswordHash.matches("incorrect",first)); assertFalse(PasswordHash.matches("correct-password","invalid"));
++    }
++}
