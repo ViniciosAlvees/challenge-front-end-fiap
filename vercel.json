@@ -4,10 +4,6 @@
       "source": "/api/:path*",
       "destination": "https://challeng-sprin4-java.onrender.com/:path*"
     },
-    {
-      "source": "/api/:path*",
-      "destination": "https://challeng-sprin4-java.onrender.com/:path*"
-    },
 
     {
       "source": "/(.*)",

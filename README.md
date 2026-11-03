@@ -34,6 +34,7 @@ Os dados da equipe usam interfaces TypeScript compostas por intersection types; 
 - Integrantes: nomes, RMs, fotos e perfis profissionais da equipe.
 - FAQ: perguntas e respostas em acordeão.
 - Contato: formulário tipado com validação de nome, e-mail, assunto e mensagem.
+- Acesso Funcionário: área protegida por senha com consulta de usuários, criação e ativação de desafios, consulta e análise de ações e ranking local. Consulte [FUNCIONARIOS.md](./FUNCIONARIOS.md) para acesso e detalhes.
 
 <<<<<<< HEAD
 O formulário de contato e a evidência dos desafios são demonstrações locais; fotos não são enviadas ao servidor. A conclusão e a pontuação dos desafios ficam salvas no navegador por conta. A API Java publica `GET` e `POST /usuarios` e `GET` e `POST /grupos`. A listagem de usuários usa `GET /usuarios`; a criação de grupo usa `POST /grupos` com `nome`. No backend atual, o DAO de grupos persiste somente o nome e a data, portanto os membros selecionados na interface ainda não ficam associados após a criação. O endpoint de usuários espera `id`, `nome` e `email`; não há endpoint de autenticação ou senha publicado, então login real não pode ser realizado por essa API. Em desenvolvimento, o proxy do Vite e, em produção, o rewrite do Vercel encaminham `/api` para a URL Java.

@@ -5,14 +5,18 @@ import SectionTitle from "../components/SectionTitle";
 import { ApiError, getCurrentAccount } from "../services/api";
 import type { AccountUser } from "../services/api";
 import {
-  completeChallenge,
   getCompletedChallengeIds,
   getChallengePoints,
+  getLocalChallenges,
+  getLocalActions,
+  publishLocalAction,
   sustainableChallenges,
 } from "../services/challenges";
 
 export default function ChallengesPage() {
   const location = useLocation();
+  const [challenges, setChallenges] = useState(sustainableChallenges);
+  const [actions, setActions] = useState<ReturnType<typeof getLocalActions>>([]);
   const initialChallengeId =
     typeof location.state === "object" &&
     location.state !== null &&
@@ -31,6 +35,8 @@ export default function ChallengesPage() {
     null,
   );
   const [evidence, setEvidence] = useState<File | null>(null);
+  const [evidenceDescription, setEvidenceDescription] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [completedIds, setCompletedIds] = useState<number[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
@@ -63,6 +69,8 @@ export default function ChallengesPage() {
 
   useEffect(() => {
     try {
+      setChallenges(getLocalChallenges());
+      setActions(getLocalActions());
       setCompletedIds(getCompletedChallengeIds(account?.id ?? null));
     } catch (error) {
       setErrorMessage(
@@ -71,9 +79,10 @@ export default function ChallengesPage() {
     }
   }, [account]);
 
-  const selectedChallenge = sustainableChallenges.find(
-    (challenge) => challenge.id === selectedId,
+  const selectedChallenge = challenges.find(
+    (challenge) => challenge.id === selectedId && challenge.active !== false,
   );
+  const submittedAction = actions.find((action) => action.userId === account?.id && action.challengeId === selectedId);
 
   const selectEvidence = (event: ChangeEvent<HTMLInputElement>) => {
     setEvidence(event.target.files?.[0] ?? null);
@@ -81,32 +90,45 @@ export default function ChallengesPage() {
     setSavedMessage("");
   };
 
-  const submitChallenge = (event: FormEvent<HTMLFormElement>) => {
+  const submitChallenge = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const form = event.currentTarget;
     if (!selectedChallenge) return;
+    if (!account) {
+      setErrorMessage("Entre na sua conta para publicar uma ação.");
+      return;
+    }
     if (!evidence) {
       setErrorMessage("Selecione uma foto como evidência antes de concluir.");
       return;
     }
-    if (!evidence.type.startsWith("image/")) {
-      setErrorMessage("O arquivo selecionado precisa ser uma imagem.");
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(evidence.type) || evidence.size > 2 * 1024 * 1024) {
+      setErrorMessage("Selecione uma imagem JPG, PNG, WebP ou GIF de até 2 MB.");
       return;
     }
 
+    setSubmitting(true);
     try {
-      completeChallenge(account?.id ?? null, selectedChallenge.id);
-      setCompletedIds(getCompletedChallengeIds(account?.id ?? null));
-      setSavedMessage("Desafio concluído! Seus pontos foram atualizados no perfil.");
+      const image = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("Não foi possível ler a foto selecionada."));
+        reader.readAsDataURL(evidence);
+      });
+      publishLocalAction(account, selectedChallenge.id, evidenceDescription, image);
+      setActions(getLocalActions());
+      setSavedMessage("Ação enviada! Aguarde a aprovação de um funcionário para receber os pontos.");
       setEvidence(null);
+      setEvidenceDescription("");
       setErrorMessage("");
-      event.currentTarget.reset();
+      form.reset();
     } catch (error) {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "Não foi possível salvar a conclusão do desafio.",
+          : "Não foi possível salvar a ação. O armazenamento deste navegador pode estar cheio.",
       );
-    }
+    } finally { setSubmitting(false); }
   };
 
   return (
@@ -114,11 +136,11 @@ export default function ChallengesPage() {
       <SectionTitle
         eyebrow="Ação sustentável"
         title="Desafios sustentáveis"
-        description="Escolha uma atividade, envie uma foto como evidência e marque o desafio como concluído para acumular pontos."
+        description="Escolha uma atividade, descreva sua ação e envie uma foto como evidência. Os pontos são liberados após a aprovação de um funcionário."
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {sustainableChallenges.map((challenge) => {
+        {challenges.filter((challenge) => challenge.active !== false).map((challenge) => {
           const isSelected = selectedId === challenge.id;
           const isComplete = completedIds.includes(challenge.id);
           return (
@@ -130,6 +152,7 @@ export default function ChallengesPage() {
                 setSelectedId(challenge.id);
                 setStartedChallengeId(null);
                 setEvidence(null);
+                setEvidenceDescription("");
                 setErrorMessage("");
                 setSavedMessage("");
               }}
@@ -157,7 +180,7 @@ export default function ChallengesPage() {
       </div>
       {accountNotice && (
         <p role="status" className="mt-5 text-sm text-muted">
-          {accountNotice} O progresso será salvo como visitante neste navegador.
+          {accountNotice} Entre na sua conta para publicar ações.
         </p>
       )}
 
@@ -181,10 +204,17 @@ export default function ChallengesPage() {
             </span>
           </div>
 
-          {completedIds.includes(selectedChallenge.id) ? (
+          {submittedAction ? (
+            <div className="mt-7 rounded-xl border border-leaf/20 bg-leaf/5 p-4 text-mint">
+              <p className="font-semibold">Ação {submittedAction.status === "pendente" ? "aguardando aprovação" : submittedAction.status}.</p>
+              {submittedAction.opinion && <p className="mt-2 text-sm">Parecer: {submittedAction.opinion}</p>}
+            </div>
+          ) : completedIds.includes(selectedChallenge.id) ? (
             <p className="mt-7 rounded-xl border border-leaf/20 bg-leaf/5 p-4 font-semibold text-leaf">
               Desafio concluído. Os pontos já estão contabilizados no seu perfil.
             </p>
+          ) : !account ? (
+            <Link to="/cadastro" className="mt-6 inline-flex rounded-full bg-leaf px-6 py-3 font-bold text-forest">Entre para participar</Link>
           ) : startedChallengeId !== selectedChallenge.id ? (
             <button
               type="button"
@@ -203,7 +233,7 @@ export default function ChallengesPage() {
 
       {selectedChallenge &&
         startedChallengeId === selectedChallenge.id &&
-        !completedIds.includes(selectedChallenge.id) && (
+        !completedIds.includes(selectedChallenge.id) && !submittedAction && (
           <section className="mt-5 rounded-3xl border border-white/10 bg-forest-soft/70 p-6 sm:p-8">
             <p className="text-xs font-bold uppercase tracking-widest text-leaf">
               Etapa de conclusão · ID {selectedChallenge.id}
@@ -213,7 +243,7 @@ export default function ChallengesPage() {
             </h2>
             <p className="mt-2 text-mint">
               Quando concluir “{selectedChallenge.description}”, envie uma foto
-              e confirme a conclusão.
+              e descreva a ação para análise.
             </p>
             <form className="mt-7 space-y-5" onSubmit={submitChallenge}>
               <div>
@@ -226,7 +256,7 @@ export default function ChallengesPage() {
                 <input
                   id="challenge-evidence"
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
                   required
                   onChange={selectEvidence}
                   className="mt-3 block w-full text-sm text-mint file:mr-4 file:rounded-full file:border-0 file:bg-leaf/10 file:px-4 file:py-2 file:font-semibold file:text-leaf hover:file:bg-leaf/20"
@@ -237,25 +267,20 @@ export default function ChallengesPage() {
                   </p>
                 )}
               </div>
+              <div>
+                <label htmlFor="action-description" className="block text-sm font-semibold text-white">Descreva a evidência da ação</label>
+                <textarea id="action-description" required minLength={5} rows={3} value={evidenceDescription} onChange={(event) => setEvidenceDescription(event.target.value)} className="mt-3 w-full rounded-xl border border-white/20 bg-forest px-4 py-3 text-white outline-none focus:border-leaf" />
+              </div>
               <p className="text-sm leading-6 text-muted">
-                A foto é usada nesta demonstração local e não é enviada para um
-                servidor. A conclusão e os pontos ficam salvos neste navegador.
+                A foto (até 2 MB) e a descrição ficam salvas neste navegador para
+                análise dos funcionários. Os pontos contam após a aprovação.
               </p>
-              {errorMessage && (
-                <p role="alert" className="text-sm text-red-200">
-                  {errorMessage}
-                </p>
-              )}
-              {savedMessage && (
-                <p role="status" className="text-sm text-leaf">
-                  {savedMessage}
-                </p>
-              )}
               <button
                 type="submit"
+                disabled={submitting}
                 className="rounded-full bg-leaf px-6 py-3 font-bold text-forest transition hover:bg-leaf-bright"
               >
-                Enviar foto e concluir
+                {submitting ? "Enviando..." : "Enviar ação para análise"}
               </button>
             </form>
           </section>
@@ -271,6 +296,8 @@ export default function ChallengesPage() {
           Ver meu perfil
         </Link>
       </p>
+      {savedMessage && <p role="status" className="mt-4 text-sm text-leaf">{savedMessage}</p>}
+      {errorMessage && <p role="alert" className="mt-4 text-sm text-red-200">{errorMessage}</p>}
     </div>
   );
 }

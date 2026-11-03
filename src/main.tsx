@@ -7,6 +7,8 @@ import "./index.css";
 import SiteLayout from "./components/SiteLayout";
 import AboutPage from "./pages/AboutPage";
 import AdminManagementPage from "./pages/AdminManagementPage";
+import EmployeeGate from "./components/EmployeeGate";
+import EmployeeAccessPage from "./pages/EmployeeAccessPage";
 import AvatarPage from "./pages/AvatarPage";
 import ChallengesPage from "./pages/ChallengesPage";
 import ContactPage from "./pages/ContactPage";
@@ -38,7 +40,8 @@ const router = createBrowserRouter([
       { path: "solucao", element: <SolutionPage /> },
       { path: "solucao/:slug", element: <SolutionDetailPage /> },
       { path: "avatar", element: <AvatarPage /> },
-      { path: "gestao", element: <AdminManagementPage /> },
+      { path: "acesso-funcionario", element: <EmployeeGate><EmployeeAccessPage /></EmployeeGate> },
+      { path: "gestao", element: <EmployeeGate><AdminManagementPage /></EmployeeGate> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

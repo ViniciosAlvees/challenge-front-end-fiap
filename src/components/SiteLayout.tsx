@@ -12,7 +12,7 @@ const navigation = [
   { to: "/integrantes", label: "Integrantes" },
   { to: "/faq", label: "FAQ" },
   { to: "/contato", label: "Contato" },
-  { to: "/gestao", label: "Painel Gestão" },
+  { to: "/acesso-funcionario", label: "Acesso Funcionário" },
 ];
 
 export default function SiteLayout() {
