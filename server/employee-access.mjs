@@ -82,7 +82,7 @@ export default async function employeeAccess(req, res) {
 
     const url = new URL(req.url, "http://localhost");
     if (url.searchParams.get("recurso") === "usuarios") {
-      const base = (process.env.SOULUP_API_URL || "https://challeng-sprin4-java.onrender.com").replace(/\/$/, "");
+      const base = (process.env.SOULUP_JAVA_API_URL || process.env.SOULUP_API_URL || "https://challeng-sprin4-java.onrender.com").replace(/\/$/, "");
       const response = await fetch(`${base}/usuarios`, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(45000) });
       if (!response.ok) return send(res, 502, { message: `A API de usuários retornou HTTP ${response.status}.` });
       const users = await response.json();

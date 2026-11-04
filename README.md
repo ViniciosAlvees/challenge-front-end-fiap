@@ -23,6 +23,7 @@ A Soul Up conecta pessoas a ações ambientais por meio de desafios, grupos e re
 | Repositório do front-end | [challenge-front-end-fiap](https://github.com/alvesdemacedoenzo-beep/challenge-front-end-fiap) — conferir acesso público sem login antes de entregar |
 | Repositório Java | [challeng-sprin4-Java](https://github.com/velascoguzmanvictorhugo-ui/challeng-sprin4-Java) |
 | API Java publicada | [API Soul Up](https://challeng-sprin4-java.onrender.com) |
+| API Python publicada | [API Python Soul Up](https://soulup-api-python.onrender.com) |
 | Deploy na Vercel | **Pendente: inserir a URL real após a publicação e os testes online.** |
 | Vídeo no YouTube | **Pendente: gravar a demonstração de até 3 minutos e inserir o link acessível.** |
 
@@ -37,7 +38,16 @@ npm ci
 npm run dev
 ```
 
-O aplicativo usa `/api` por padrão. O proxy do Vite encaminha as requisições para a API Java. Opcionalmente, copie `.env.example` para `.env.local` para personalizar `VITE_API_BASE_URL`. Em produção, o `vercel.json` encaminha as mesmas rotas e fornece fallback para a SPA. Reinicie o Vite após alterar a configuração.
+O aplicativo usa as duas APIs: `/api` encaminha para Python e `/api/java` encaminha para Java. Os proxies funcionam no desenvolvimento, no preview e na Vercel, mantendo a sessão Python na mesma origem do site. Opcionalmente, copie `.env.example` para `.env.local`. Reinicie o Vite após alterar a configuração.
+
+| Variável | Padrão / uso |
+|---|---|
+| `VITE_API_BASE_URL` | `/api`, cliente Python |
+| `VITE_JAVA_API_BASE_URL` | `/api/java`, cliente Java |
+| `SOULUP_PYTHON_API_URL` | `https://soulup-api-python.onrender.com`, proxy local Python |
+| `SOULUP_JAVA_API_URL` | `https://challeng-sprin4-java.onrender.com`, proxy local Java e consultas de funcionários |
+
+Na Vercel, os destinos dos proxies são declarados em `vercel.json`; alterar apenas as variáveis `SOULUP_*` não altera esses rewrites. Se houver valores antigos de `VITE_API_BASE_URL` no painel, ajuste para `/api` e defina `VITE_JAVA_API_BASE_URL=/api/java` antes do próximo build.
 
 ```bash
 npm test
@@ -46,7 +56,7 @@ npm run preview
 npm run check:api
 ```
 
-`npm test` verifica autenticação, contrato HTTP, validação das respostas e regras de gestão local. `check:api` faz apenas consultas de leitura e informa o status dos endpoints, sem exibir os dados pessoais dos registros.
+`npm test` verifica autenticação, roteamento entre as duas APIs, contrato HTTP, validação das respostas e regras de gestão local. `check:api` consulta Python e Java sem alterar registros nem exibir dados pessoais. O HTTP 401 de `/auth/me` sem credenciais é esperado; indisponibilidade de qualquer API faz a verificação falhar.
 
 ### Navegação e funcionalidades
 
@@ -60,13 +70,24 @@ npm run check:api
 - **Desafios:** participação com descrição e foto local, sujeita à aprovação de funcionário. Os pontos locais e os pontos da API são apresentados separadamente no perfil.
 - **Contato:** formulário demonstrativo com validação, sem envio de mensagens.
 
-### Integração e atualização do Java
+### Integração Python e Java
+
+| Operação | API |
+|---|---|
+| Cadastro de conta (`POST /usuarios`), login, sessão e logout (`/auth/*`) | Python |
+| Listagem, detalhes e exclusão de usuários (`/usuarios`) | Java |
+| Listagem, detalhes, criação e exclusão de grupos (`/grupos`) | Java |
+| Consulta de desafios na gestão (`GET /desafios`) | Python |
+
+As contas autenticadas pelo Python e os usuários retornados pelo Java pertencem aos respectivos backends. O frontend não replica contas, senhas, IDs ou exclusões entre os bancos. Os membros de grupos são selecionados exclusivamente da listagem Java; o ID da sessão Python não é usado como ID de usuário Java. Para compartilhar cadastros entre os serviços, os backends precisam implementar essa sincronização.
 
 O código Java consultado na branch `main`, commit `107b64c689ccd649fc51350d87daf0e4f90bbde5`, oferece listagens em `GET /usuarios`, `GET /grupos` e `GET /desafios`; escrita com `POST /usuarios` e `POST /grupos`; exclusão com `DELETE /usuarios?id=...` e `DELETE /grupos?id=...`.
 
 As telas de detalhe consultam os dados atuais das listagens e selecionam o registro pelo ID. Identificadores inválidos ou inexistentes têm feedback próprio. Respostas inválidas, falhas HTTP e listas vazias são tratadas separadamente, sem fabricar registros.
 
-**O Java publicado ainda precisa receber a correção de autenticação e membros.** O pacote em [backend-patches](./backend-patches/README.md) contém o patch e as instruções de migração e publicação. Até essa atualização, o front-end informa a ausência do serviço de autenticação e não simula um login bem-sucedido. Contas antigas sem credencial exigem um fluxo de recuperação de identidade; não recebem senha automática.
+O pacote histórico em [backend-patches](./backend-patches/README.md) contém correções Java para autenticação e membros. A autenticação do frontend agora usa o Python e não depende da aplicação desse patch Java. A persistência de membros continua dependendo do contrato implementado no Java.
+
+No Render da API Python, configure `SOULUP_ORIGENS` com as origens permitidas, incluindo `http://localhost:5173` e a URL pública real do frontend, sem barra final e no formato aceito pelo backend. Essa alteração é feita no painel do Render. Com os proxies padrão, o navegador faz as requisições à própria origem do site; ao configurar URLs diretas em `VITE_*`, o backend correspondente precisa permitir CORS e cookies dessa origem.
 
 Desafios, fotos, pareceres e ranking local continuam armazenados neste navegador, sem sincronização automática com o SQLite do Python ou com outros dispositivos. Esses dados de demonstração não substituem a persistência e a autorização do backend. A API Java é usada para as listagens, detalhes e operações de escrita dos cadastros.
 

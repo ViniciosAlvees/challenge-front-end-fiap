@@ -5,8 +5,12 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/api/:path*",
+      "source": "/api/java/:path*",
       "destination": "https://challeng-sprin4-java.onrender.com/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://soulup-api-python.onrender.com/:path*"
     },
 
     {
