@@ -60,7 +60,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [employeeApi, react(), tailwindcss()],
-    server: { proxy },
+    server: { port: 5173, strictPort: true, proxy },
     preview: { proxy },
   };
 });
