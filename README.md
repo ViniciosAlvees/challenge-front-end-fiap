@@ -21,13 +21,14 @@ A Soul Up conecta pessoas a ações ambientais por meio de desafios, grupos e re
 | Recurso | Endereço ou situação |
 |---|---|
 | Repositório do front-end | [challenge-front-end-fiap](https://github.com/alvesdemacedoenzo-beep/challenge-front-end-fiap) — conferir acesso público sem login antes de entregar |
+| Fork conectado à Vercel | [ViniciosAlvees/challenge-front-end-fiap](https://github.com/ViniciosAlvees/challenge-front-end-fiap) |
 | Repositório Java | [challeng-sprin4-Java](https://github.com/velascoguzmanvictorhugo-ui/challeng-sprin4-Java) |
 | API Java publicada | [API Soul Up](https://challeng-sprin4-java.onrender.com) |
 | API Python publicada | [API Python Soul Up](https://soulup-api-python.onrender.com) |
 | Deploy na Vercel | [Soul Up](https://soul-up-plum.vercel.app) |
 | Vídeo no YouTube | **Pendente: gravar a demonstração de até 3 minutos e inserir o link acessível.** |
 
-O vídeo ainda é uma pendência da entrega. O frontend foi publicado na Vercel pelo CLI a partir dos arquivos locais; os próximos envios ao GitHub não geram deploy automático nessa configuração.
+O vídeo ainda é uma pendência da entrega. A Vercel está conectada ao fork `ViniciosAlvees/challenge-front-end-fiap`; atualizações da branch `main` publicam o frontend automaticamente.
 
 ### Instalação e execução
 

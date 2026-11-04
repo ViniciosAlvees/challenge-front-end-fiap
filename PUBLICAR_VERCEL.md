@@ -4,9 +4,9 @@
 
 Site: https://soul-up-plum.vercel.app
 
-Projeto `soul-up`, no espaco `alveesdev`. A publicacao foi feita pelo CLI com os arquivos locais. O repositorio pertence a outra conta pessoal do GitHub, por isso a conexao automatica com ele nao foi estabelecida. Novos pushes nao atualizam o site automaticamente.
+Projeto `soul-up`, no espaco `alveesdev`, conectado ao fork `ViniciosAlvees/challenge-front-end-fiap`. Atualizacoes da branch `main` geram publicacoes automaticas. O repositorio original da equipe fica disponivel como remoto `upstream`; `origin` aponta para o fork pessoal.
 
-Para publicar novas alteracoes deste computador:
+Para usar a publicacao automatica, envie as alteracoes ao fork e incorpore-as a `main`. Como alternativa, publique os arquivos locais pelo CLI:
 
 ```bash
 npx vercel login
@@ -23,7 +23,7 @@ Habilite a integracao Vercel nesta conversa. Depois disso, e possivel verificar 
 
 1. Entre em https://vercel.com/dashboard com sua conta.
 2. Antes de importar, envie o codigo corrigido ao GitHub e confirme a branch que sera publicada. A Vercel publica o codigo remoto; mudancas apenas no VS Code nao entram em um deploy pelo GitHub.
-3. Se o projeto ja existir no painel, abra-o e confira o repositorio e a branch. Para um projeto novo, clique em **Add New > Project**, importe `alvesdemacedoenzo-beep/challenge-front-end-fiap` e selecione a branch com as correcoes.
+3. Se o projeto ja existir no painel, abra-o e confira o repositorio e a branch. Para um projeto novo na conta ViniciosAlvees, clique em **Add New > Project**, importe o fork `ViniciosAlvees/challenge-front-end-fiap` e selecione a branch com as correcoes.
 4. Use **Framework Preset: Vite**, **Root Directory: raiz do projeto**, **Build Command: npm run build**, **Output Directory: dist** e **Install Command: npm ci**. O `vercel.json` ja declara esses valores.
 5. Use `VITE_API_BASE_URL=/api` para Python e `VITE_JAVA_API_BASE_URL=/api/java` para Java. A aplicacao ja usa esses valores por padrao. Remova ou atualize valores antigos no painel antes do build. O `vercel.json` encaminha `/api/java/*` ao Java e os demais caminhos `/api/*` ao Python; a funcao `/api/acesso-funcionario` permanece no servidor Node.
 6. Clique em **Deploy**. Quando o status for **Ready**, clique em **Visit** e copie a URL exibida em **Domains**. Essa sera a URL real do front-end; ela nao deve ser deduzida a partir do nome do repositorio.
