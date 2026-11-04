@@ -10,7 +10,8 @@ $requiredFiles = @(
     'package.json', 'package-lock.json', 'README.md', 'index.html',
     'vite.config.ts', 'tsconfig.json', 'tsconfig.app.json', 'tsconfig.node.json',
     'vercel.json', '.env.example', 'src/main.tsx', 'src/index.css',
-    'api/acesso-funcionario.js', 'server/employee-access.mjs'
+    'api/acesso-funcionario.js', 'server/employee-access.mjs',
+    'api/auth.js', 'server/auth.mjs', 'server/python-session.mjs'
 )
 
 Push-Location $projectRoot

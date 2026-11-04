@@ -68,7 +68,7 @@ npm run check:api
 - **Solução e Avatar:** conteúdo e prototipação navegável da proposta, com detalhes em `/solucao/:slug`.
 - **Grupos:** listagem real da API em `/grupos`, detalhe em `/grupos/:id` e cadastro em `/grupos/novo`. O cadastro envia os IDs dos participantes e consulta novamente a API para verificar os vínculos.
 - **Conta e Perfil:** cadastro e autenticação por senha. O login somente é aceito quando `/auth/login` e `/auth/me` confirmam a sessão; não existe entrada apenas por e-mail nem autenticação pelo armazenamento do navegador.
-- **Acesso Funcionário:** consulta de usuários e seus detalhes, cadastro/edição/exclusão de desafios na API Java, consulta e análise local de ações e ranking local. A senha inicial solicitada é `123456789`. Leia [FUNCIONARIOS.md](./FUNCIONARIOS.md).
+- **Acesso Funcionário:** consulta de usuários e seus detalhes, cadastro/edição/exclusão de desafios na API Java, consulta e análise local de ações e ranking local. A senha é validada pelo Python em `/auth/funcionarios`; `12345678` foi confirmada no serviço em 04/11/2026. Leia [FUNCIONARIOS.md](./FUNCIONARIOS.md).
 - **Gestão da API:** cadastro, listagem, edição de nome/e-mail e exclusão de usuários Java; listagem e exclusão de grupos, com acesso ao formulário de cadastro; cadastro, listagem, edição e exclusão de desafios Java. Toda escrita é confirmada por nova consulta, e exclusões exigem confirmação do usuário.
 - **Desafios:** catálogo consultado na API Java com título, descrição, categoria e pontos. Participação com descrição e foto local, sujeita à aprovação de funcionário. Os pontos locais e os pontos da API são apresentados separadamente no perfil.
 - **Contato:** formulário demonstrativo com validação, sem envio de mensagens.
@@ -83,6 +83,8 @@ npm run check:api
 | Catálogo de desafios na página principal e gestão: GET, POST, PUT e DELETE (`/desafios`) | Java |
 
 As contas autenticadas pelo Python e os usuários retornados pelo Java pertencem aos respectivos backends. O frontend não replica contas, senhas, IDs ou exclusões entre os bancos. Os membros de grupos são selecionados exclusivamente da listagem Java; o ID da sessão Python não é usado como ID de usuário Java. Para compartilhar cadastros entre os serviços, os backends precisam implementar essa sincronização.
+
+O Python atual usa token Bearer. As funções Node de `/api/auth/*` e `/api/acesso-funcionario` enviam as credenciais ao Python, confirmam a sessão em `/auth/me` e guardam o token em cookies HttpOnly separados para usuário e funcionário, por até uma hora. O token não é devolvido ao JavaScript do navegador; logout revoga a sessão no Python. Não há senha local de funcionário nem fallback caso o Python recuse o acesso. Configure `SOULUP_SENHA_FUNCIONARIOS` no serviço Python do Render; `EMPLOYEE_PASSWORD` não é usado pelo frontend/Node.
 
 O contrato foi conferido no Java em `main`, commit `e51f5dbcd2310d8cc912f0345fe4f1c2e93167c4`: `GET/POST /usuarios`, `PUT /usuarios` com `id`, `nome` e `email` no JSON; `GET/POST /grupos`; `GET/POST /desafios`, `PUT /desafios` com `id`, `titulo`, `descricao`, `pontos` e `categoria`. As exclusões usam `DELETE /usuarios?id=...`, `/grupos?id=...` e `/desafios?id=...`. Os exemplos das imagens com `/{id}` não correspondem aos controllers atuais; não há tentativa automática de repetir operações em outras URLs.
 

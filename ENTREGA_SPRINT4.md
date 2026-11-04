@@ -82,6 +82,8 @@ Na consulta online posterior, `/usuarios`, `/grupos` e `/desafios` Java excedera
 
 ## Histórico individual na base revisada 62482b4
 
+Atualização de autenticação em 04/11/2026: a senha de funcionário é validada pelo Python em `/auth/funcionarios`. A antiga senha local de nove dígitos foi removida. `12345678` foi aceita pela API publicada; no navegador local, também passaram login real, recarga da sessão e logout. Tokens Bearer são mantidos em cookies HttpOnly distintos para conta e funcionário, com confirmação em `/auth/me` e revogação no Python. Os testes automatizados passaram para **34**. Essa validação de autenticação não certifica os CRUDs Java ou o deploy atualizado da Vercel.
+
 Aliases agrupados por integrante. Contagem não comprova, isoladamente, qualidade das contribuições.
 
 | Integrante | Com merges | Sem merges |
