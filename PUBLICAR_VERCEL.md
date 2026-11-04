@@ -1,5 +1,20 @@
 # Publicar o front-end na Vercel
 
+## Publicacao atual
+
+Site: https://soul-up-plum.vercel.app
+
+Projeto `soul-up`, no espaco `alveesdev`. A publicacao foi feita pelo CLI com os arquivos locais. O repositorio pertence a outra conta pessoal do GitHub, por isso a conexao automatica com ele nao foi estabelecida. Novos pushes nao atualizam o site automaticamente.
+
+Para publicar novas alteracoes deste computador:
+
+```bash
+npx vercel login
+npx vercel deploy --prod --scope alveesdev
+```
+
+Em outro checkout, execute antes `npx vercel link --project soul-up --scope alveesdev` para selecionar o projeto existente. A pasta `.vercel` guarda esse vinculo local e fica fora do Git.
+
 ## Publicacao assistida
 
 Habilite a integracao Vercel nesta conversa. Depois disso, e possivel verificar sua conta, localizar um projeto existente e publicar a versao corrigida, sem precisar enviar senhas pelo chat. As configuracoes das APIs no Render sao feitas separadamente.
