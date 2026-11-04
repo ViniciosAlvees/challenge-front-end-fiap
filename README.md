@@ -30,6 +30,8 @@ A Soul Up conecta pessoas a ações ambientais por meio de desafios, grupos e re
 
 O vídeo ainda é uma pendência da entrega. A Vercel está conectada ao fork `ViniciosAlvees/challenge-front-end-fiap`; atualizações da branch `main` publicam o frontend automaticamente.
 
+**Conferência em 04/11/2026:** o site e os repositórios estavam públicos, mas a consulta de grupos Java pelo site retornou HTTP 503, indicando configuração do servidor ou migração do banco. A integração Java precisa ser restabelecida e validada com leitura e escrita reais antes da entrega. Confira o relatório e a tabela completa de penalidades em [ENTREGA_SPRINT4.md](./ENTREGA_SPRINT4.md).
+
 ### Instalação e execução
 
 Requisitos: Node.js 22.18+ ou 24+ e npm.
@@ -131,3 +133,5 @@ Marca e imagens de equipe fornecidas com o projeto. Houve apoio do Codex na impl
 ## Preparação da entrega
 
 Antes de enviar, publique a API corrigida e o front-end, valide o acesso público, preencha os links pendentes e revise [ENTREGA_SPRINT4.md](./ENTREGA_SPRINT4.md). O ZIP deve ter até 50 MB, incluir o código e as configurações e excluir `node_modules`, credenciais, caches e arquivos temporários. O envio deve ocorrer pelo Portal do Aluno.
+
+Em Windows, execute `npm run package:delivery` a partir do repositório Git para gerar `output/Soul-Up-Entrega-4.zip`. O comando confere arquivos essenciais, conteúdo e limite de tamanho e inclui uma cópia textual do histórico Git. Após inserir o vídeo ou alterar o código, gere o pacote novamente. A preparação do ZIP não substitui a validação da API online nem o envio pelo portal.
