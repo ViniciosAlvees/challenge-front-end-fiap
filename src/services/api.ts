@@ -9,18 +9,22 @@ export class ApiError extends Error {
 
 const environment = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
 
-function getApiUrl(path: string): URL {
-  const base = environment?.VITE_API_BASE_URL?.trim() || "/api";
+type ApiBackend = "python" | "java";
+
+function getApiUrl(path: string, backend: ApiBackend): URL {
+  const base = backend === "java"
+    ? environment?.VITE_JAVA_API_BASE_URL?.trim() || "/api/java"
+    : environment?.VITE_API_BASE_URL?.trim() || "/api";
   return new URL(path.replace(/^\/+/, ""), new URL(`${base.replace(/\/$/, "")}/`, window.location.origin));
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T | null> {
+async function request<T>(path: string, init: RequestInit = {}, backend: ApiBackend = "python"): Promise<T | null> {
   const writing = init.method !== undefined && init.method !== "GET";
   const uncertainWrite = writing ? " Consulte os registros antes de repetir: a operação pode ter sido recebida." : "";
   let response: Response;
   try {
-    response = await fetch(getApiUrl(path), {
-      credentials: "include", ...init,
+    response = await fetch(getApiUrl(path, backend), {
+      credentials: backend === "python" ? "include" : "omit", ...init,
       signal: init.signal ?? AbortSignal.timeout(45000),
       headers: { Accept: "application/json", ...init.headers },
     });
@@ -121,7 +125,7 @@ export function clearStoredAccount(): void {
 }
 function authError(cause: unknown): never {
   if (cause instanceof ApiError && [404, 405, 501].includes(cause.status)) {
-    throw new ApiError("O servidor ainda não disponibiliza autenticação com senha. A API Java precisa implementar /auth/login e /auth/me.", cause.status);
+    throw new ApiError("O servidor ainda não disponibiliza autenticação com senha. Verifique os endpoints /auth/login e /auth/me da API.", cause.status);
   }
   throw cause;
 }
@@ -156,28 +160,34 @@ export async function logout(): Promise<null> {
   clearStoredAccount();
   return null;
 }
-export async function listUsers(): Promise<ApiUser[]> { return list(await apiGet<unknown>("/usuarios")).map(parseApiUser); }
+export async function listUsers(): Promise<ApiUser[]> { return list(await request<unknown>("/usuarios", {}, "java")).map(parseApiUser); }
 export async function getUser(id: number): Promise<ApiUser> {
   identifier(id);
-  // A listagem é o contrato disponível do Java; o detalhe usa dados reais dela.
+  // O detalhe usa os dados atuais da listagem da API.
   const user = (await listUsers()).find((item) => item.id === id);
   if (!user) throw new ApiError("Usuário não encontrado na API.", 404);
   return user;
 }
-export const deleteUser = (id: number) => apiDelete(`/usuarios?id=${identifier(id)}`);
+export async function deleteUser(id: number): Promise<null> {
+  await request<unknown>(`/usuarios?id=${identifier(id)}`, { method: "DELETE" }, "java");
+  return null;
+}
 export async function createGroup(group: CreateGroupRequest): Promise<ApiGroup> {
-  const response = await apiPost<unknown, CreateGroupRequest>("/grupos", group);
+  const response = await request<unknown>("/grupos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(group) }, "java");
   try { return parseApiGroup(response); }
   catch { throw new Error("O servidor não confirmou um identificador válido para o grupo. Consulte os grupos antes de repetir o cadastro."); }
 }
-export async function listGroups(): Promise<ApiGroup[]> { return list(await apiGet<unknown>("/grupos")).map(parseApiGroup); }
+export async function listGroups(): Promise<ApiGroup[]> { return list(await request<unknown>("/grupos", {}, "java")).map(parseApiGroup); }
 export async function getGroup(id: number): Promise<ApiGroup> {
   identifier(id);
   const group = (await listGroups()).find((item) => item.id === id);
   if (!group) throw new ApiError("Grupo não encontrado na API.", 404);
   return group;
 }
-export const deleteGroup = (id: number) => apiDelete(`/grupos?id=${identifier(id)}`);
+export async function deleteGroup(id: number): Promise<null> {
+  await request<unknown>(`/grupos?id=${identifier(id)}`, { method: "DELETE" }, "java");
+  return null;
+}
 export async function listChallenges(): Promise<ApiChallenge[]> {
   return list(await apiGet<unknown>("/desafios")).map((value) => {
     const challenge = record(value);

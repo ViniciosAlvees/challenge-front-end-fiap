@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { beforeEach, afterEach, test } from "node:test";
-import { ApiError, login, getCurrentAccount, getStoredAccount, listUsers, getUser, listGroups, getGroup, createGroup, deleteUser, deleteGroup } from "../src/services/api.ts";
+import { ApiError, login, logout, registerAccount, listChallenges, getCurrentAccount, getStoredAccount, listUsers, getUser, listGroups, getGroup, createGroup, deleteUser, deleteGroup } from "../src/services/api.ts";
 
 const originalFetch = globalThis.fetch;
 const storage = new Map();
@@ -35,6 +35,27 @@ test("successful login must also be confirmed by the server session endpoint", a
   assert.deepEqual(await login({ email: user.email, senha: "correct-password" }), user);
   assert.match(calls[1].url, /auth\/me$/); assert.equal(calls[0].credentials, "include");
   assert.deepEqual(getStoredAccount(), user);
+  assert.equal(calls[0].url, "http://localhost:5173/api/auth/login");
+  assert.equal(calls[1].url, "http://localhost:5173/api/auth/me");
+});
+
+test("Python handles account registration, challenges and logout independently of Java records", async () => {
+  const account = { ...user, id: 42 };
+  mock([{ body: account }, { body: account }, { body: account }, { body: [user] }, { body: [] }, { status: 204 }]);
+  const credentials = { nome: account.nome, email: account.email, senha: "correct-password" };
+  assert.equal((await registerAccount(credentials)).id, 42);
+  await login(credentials);
+  assert.equal((await listUsers())[0].id, 1);
+  assert.equal(getStoredAccount().id, 42);
+  assert.deepEqual(await listChallenges(), []);
+  await logout();
+  assert.equal(getStoredAccount(), null);
+  assert.deepEqual(calls.map((call) => new URL(call.url).pathname), [
+    "/api/usuarios", "/api/auth/login", "/api/auth/me", "/api/java/usuarios", "/api/desafios", "/api/auth/logout",
+  ]);
+  assert.deepEqual(JSON.parse(calls[0].body), credentials);
+  assert.ok(calls.filter((call) => !call.url.includes("/java/")).every((call) => call.credentials === "include"));
+  assert.equal(calls[3].credentials, "omit");
 });
 test("a login response without an authenticated session does not log in", async () => {
   mock([{ body: user }, { status: 401 }]);
@@ -51,6 +72,7 @@ test("user and group details are selected from current API records, including 40
   assert.deepEqual(await getUser(1), user);
   assert.equal((await getGroup(7)).membros[0].id, 1);
   await assert.rejects(getUser(999), (error) => error.status === 404);
+  assert.deepEqual(calls.map((call) => new URL(call.url).pathname), ["/api/java/usuarios", "/api/java/grupos", "/api/java/usuarios"]);
 });
 test("rejects malformed lists and records instead of fabricating IDs or dates", async () => {
   mock([{ body: [{ nome: "Sem ID", email: user.email }] }, { body: null }, { body: [{ id: 7, nome: "Grupo" }] }]);
@@ -66,10 +88,13 @@ test("group creation sends selected members and verifies a real identifier", asy
   mock([{ status: 201, body: group }]);
   assert.equal((await createGroup({ nome: group.nome, membros: [{ id: 1 }] })).id, 7);
   assert.deepEqual(JSON.parse(calls[0].body).membros, [{ id: 1 }]);
+  assert.equal(calls[0].url, "http://localhost:5173/api/java/grupos");
+  assert.equal(calls[0].credentials, "omit");
 });
 test("deletion follows the Java query parameter contract", async () => {
   mock([{ status: 204 }, { status: 204 }]);
   await deleteUser(1); await deleteGroup(7);
-  assert.match(calls[0].url, /usuarios\?id=1$/); assert.match(calls[1].url, /grupos\?id=7$/);
+  assert.equal(calls[0].url, "http://localhost:5173/api/java/usuarios?id=1");
+  assert.equal(calls[1].url, "http://localhost:5173/api/java/grupos?id=7");
   assert.ok(calls.every((call) => call.method === "DELETE"));
 });

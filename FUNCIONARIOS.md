@@ -17,13 +17,13 @@ Para experimentar o fluxo completo, entre em uma conta na página **Conta**, env
 
 ## Armazenamento e integração
 
-O código Python fornecido é um programa de terminal, sem servidor HTTP. Esta implementação adapta suas regras ao site: desafios, ações e fotos ficam no `localStorage` deste navegador e não são sincronizados com o SQLite do Python ou entre dispositivos. As fotos aceitas são JPG, PNG, WebP e GIF de até 2 MB, sujeitas à capacidade de armazenamento do navegador. O ranking não altera pontos na API Java. Ainda não há votação comunitária no site, portanto não são concedidos os bônus de voto do Python.
+As regras locais foram adaptadas do programa Python de terminal. A API Python HTTP agora atende contas, autenticação e consulta de desafios na gestão, mas desafios criados pelos funcionários, ações e fotos continuam no `localStorage` deste navegador, sem sincronização entre dispositivos. As fotos aceitas são JPG, PNG, WebP e GIF de até 2 MB, sujeitas à capacidade de armazenamento do navegador. O ranking não altera pontos nas APIs. Ainda não há votação comunitária no site, portanto não são concedidos os bônus de voto do Python.
 
 A senha protege as telas de funcionários e a consulta de usuários por seu endpoint. Os registros locais são dados de demonstração e podem ser alterados pelas ferramentas do navegador; controle de integridade entre usuários/dispositivos exige armazenamento e autorização no backend.
 
-O endpoint `/api/acesso-funcionario` é atendido pelo middleware local no Vite (desenvolvimento e preview) e pela função `api/acesso-funcionario.js` na Vercel. Os demais endpoints `/api` continuam encaminhados à API Java.
+O endpoint `/api/acesso-funcionario` é atendido pelo middleware local no Vite (desenvolvimento e preview) e pela função `api/acesso-funcionario.js` na Vercel. `/api/java/*` encaminha ao Java; os demais endpoints `/api/*` encaminham ao Python.
 
-Opcionalmente, defina `EMPLOYEE_PASSWORD` no ambiente do processo Node ou nas variáveis de ambiente da Vercel para substituir a senha inicial. Não use o prefixo `VITE_` para essa variável. Reinicie o servidor após alterações. `SOULUP_API_URL` permite configurar a API Java consultada pelos funcionários.
+Opcionalmente, defina `EMPLOYEE_PASSWORD` no ambiente do processo Node ou nas variáveis de ambiente da Vercel para substituir a senha inicial. Não use o prefixo `VITE_` para essa variável. Reinicie o servidor após alterações. `SOULUP_JAVA_API_URL` permite configurar a API Java consultada pelos funcionários; `SOULUP_API_URL` permanece aceito como nome antigo.
 
 ## Verificação
 
