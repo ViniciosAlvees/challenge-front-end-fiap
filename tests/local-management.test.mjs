@@ -10,6 +10,9 @@ import {
   getLocalRanking,
   publishLocalAction,
   toggleLocalChallenge,
+  publishApiChallengeAction,
+  getApprovedActionPoints,
+  getCompletedApiChallengeIds,
 } from "../src/services/challenges.ts";
 
 const values = new Map();
@@ -19,6 +22,39 @@ Object.defineProperty(globalThis, "localStorage", {
     setItem: (key, value) => values.set(key, value),
   },
   configurable: true,
+});
+
+test("Java challenge actions cannot collide with legacy IDs and preserve approved point snapshots", () => {
+  publishLocalAction(ana, 1, "Evidência do desafio antigo");
+  const challenge = {
+    id: 1,
+    titulo: "Novo no Java",
+    descricao: "Coletar resíduos",
+    categoria: "Reciclagem",
+    pontos: 77,
+  };
+  const action = publishApiChallengeAction(
+    ana,
+    challenge,
+    "Evidência para o desafio Java",
+  );
+  assert.equal(action.challengeSource, "java");
+  assert.equal(getApprovedActionPoints(ana.id), 0);
+  decideLocalAction(action.id, true, "Evidência aprovada");
+  assert.equal(getApprovedActionPoints(ana.id), 77);
+  assert.deepEqual(getCompletedApiChallengeIds(ana.id), [1]);
+  challenge.pontos = 999;
+  assert.equal(getApprovedActionPoints(ana.id), 77);
+  publishApiChallengeAction(
+    bia,
+    { ...challenge, id: 2, pontos: 0 },
+    "Evidência de desafio sem bônus",
+  );
+  assert.equal(getLocalActions().length, 3);
+  assert.throws(
+    () => publishApiChallengeAction(ana, challenge, "Evidência duplicada"),
+    /já enviou/,
+  );
 });
 const ana = { id: 1, nome: "Ana", email: "ana@example.test" };
 const bia = { id: 2, nome: "Bia", email: "bia@example.test" };

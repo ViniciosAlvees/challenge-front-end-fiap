@@ -1,24 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import type { FormEvent } from "react";
 import SectionTitle from "../components/SectionTitle";
+import ChallengeManagement from "../components/ChallengeManagement";
 import { ApiError } from "../services/api";
 import type { ApiUser } from "../services/api";
 import { checkEmployeeAccess, listEmployeeUsers } from "../services/employee";
 import {
-  createLocalChallenge,
   decideLocalAction,
   getLocalActions,
-  getLocalChallenges,
   getLocalRanking,
-  toggleLocalChallenge,
 } from "../services/challenges";
-import type { LocalAction, SustainableChallenge } from "../services/challenges";
+import type { LocalAction } from "../services/challenges";
 
 const options = [
   "Consultar usuários da API",
   "Criar desafio",
-  "Ativar/desativar desafio",
+  "Editar/excluir desafios",
   "Consultar ações",
   "Aprovar/rejeitar ação",
   "Ranking local",
@@ -31,7 +28,6 @@ const buttonClass =
 export default function EmployeeAccessPage() {
   const [selected, setSelected] = useState(0);
   const [users, setUsers] = useState<ApiUser[]>([]);
-  const [challenges, setChallenges] = useState<SustainableChallenge[]>([]);
   const [actions, setActions] = useState<LocalAction[]>([]);
   const [ranking, setRanking] = useState<ReturnType<typeof getLocalRanking>>(
     [],
@@ -39,14 +35,10 @@ export default function EmployeeAccessPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
-  const [points, setPoints] = useState(100);
   const [opinions, setOpinions] = useState<Record<number, string>>({});
   const loadVersion = useRef(0);
 
   function refreshLocal() {
-    setChallenges(getLocalChallenges());
     setActions(getLocalActions());
     setRanking(getLocalRanking());
   }
@@ -109,16 +101,6 @@ export default function EmployeeAccessPage() {
     } finally {
       setLoading(false);
     }
-  }
-
-  function create(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    void change(() => {
-      createLocalChallenge(description, category, points);
-      setDescription("");
-      setCategory("");
-      setPoints(100);
-    }, "Desafio criado e disponível na página Desafios.");
   }
 
   const visibleActions =
@@ -236,94 +218,11 @@ export default function EmployeeAccessPage() {
               <p className="text-muted">Nenhum usuário retornado pela API.</p>
             ))}
 
-          {selected === 1 && (
-            <form onSubmit={create} className="space-y-5">
-              <label
-                className="block text-sm font-semibold text-mint"
-                htmlFor="new-challenge-description"
-              >
-                Descrição
-                <textarea
-                  id="new-challenge-description"
-                  required
-                  minLength={5}
-                  value={description}
-                  onChange={(event) => setDescription(event.target.value)}
-                  rows={3}
-                  className={inputClass}
-                />
-              </label>
-              <label
-                className="block text-sm font-semibold text-mint"
-                htmlFor="new-challenge-category"
-              >
-                Categoria
-                <input
-                  id="new-challenge-category"
-                  required
-                  minLength={3}
-                  value={category}
-                  onChange={(event) => setCategory(event.target.value)}
-                  className={inputClass}
-                />
-              </label>
-              <label
-                className="block text-sm font-semibold text-mint"
-                htmlFor="new-challenge-points"
-              >
-                Pontos
-                <input
-                  id="new-challenge-points"
-                  type="number"
-                  required
-                  min={1}
-                  max={10000}
-                  step={1}
-                  value={points}
-                  onChange={(event) => setPoints(Number(event.target.value))}
-                  className={inputClass}
-                />
-              </label>
-              <button type="submit" disabled={loading} className={buttonClass}>
-                Criar desafio
-              </button>
-            </form>
-          )}
-
-          {selected === 2 && (
-            <ul className="space-y-3">
-              {challenges.map((challenge) => (
-                <li
-                  key={challenge.id}
-                  className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 p-4"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-white">
-                      {challenge.description}
-                    </p>
-                    <p className="mt-1 text-sm text-muted">
-                      ID {challenge.id} · {challenge.category} ·{" "}
-                      {challenge.points} pontos ·{" "}
-                      {challenge.active ? "Ativo" : "Inativo"}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() =>
-                      void change(
-                        () => toggleLocalChallenge(challenge.id),
-                        "Status atualizado. O histórico foi preservado.",
-                      )
-                    }
-                    className="rounded-full border border-leaf/30 px-4 py-2 text-sm font-semibold text-leaf disabled:opacity-50"
-                  >
-                    {challenge.active ? "Desativar" : "Ativar"}
-                    <span className="sr-only"> desafio {challenge.id}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+          {(selected === 1 || selected === 2) && (
+            <ChallengeManagement
+              key={selected}
+              initialCreate={selected === 1}
+            />
           )}
 
           {(selected === 3 || selected === 4) &&
@@ -473,8 +372,8 @@ export default function EmployeeAccessPage() {
         </section>
       </div>
       <p className="mt-7 text-sm leading-6 text-muted">
-        Desafios, ações e ranking são locais a este navegador. Os usuários são
-        consultados na API Java.
+        Usuários e desafios são consultados na API Java. As evidências, os
+        pareceres e o ranking de demonstração ficam neste navegador.
       </p>
     </div>
   );

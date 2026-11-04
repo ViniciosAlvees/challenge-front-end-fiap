@@ -22,6 +22,7 @@ const endpoints = [
   { backend: "python", path: "/auth/me", expectedStatus: 401 },
   { backend: "java", path: "/usuarios", expectedStatus: 200 },
   { backend: "java", path: "/grupos", expectedStatus: 200 },
+  { backend: "java", path: "/desafios", expectedStatus: 200 },
 ];
 if (process.argv.includes("--discover")) {
   endpoints.push(

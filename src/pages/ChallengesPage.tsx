@@ -2,20 +2,29 @@ import { useEffect, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
 import SectionTitle from "../components/SectionTitle";
-import { getCurrentAccount } from "../services/api";
+import {
+  getChallenge,
+  getCurrentAccount,
+  listChallenges,
+} from "../services/api";
+import RequestFeedback from "../components/RequestFeedback";
+import useApiList from "../hooks/useApiList";
 import { useAuth } from "../contexts/AuthContext";
 import {
-  getCompletedChallengeIds,
-  getChallengePoints,
-  getLocalChallenges,
+  getCompletedApiChallengeIds,
+  getApprovedActionPoints,
   getLocalActions,
-  publishLocalAction,
-  sustainableChallenges,
+  publishApiChallengeAction,
 } from "../services/challenges";
 
 export default function ChallengesPage() {
   const location = useLocation();
-  const [challenges, setChallenges] = useState(sustainableChallenges);
+  const {
+    items: challenges,
+    loading,
+    error: catalogError,
+    reload,
+  } = useApiList(listChallenges);
   const [actions, setActions] = useState<ReturnType<typeof getLocalActions>>(
     [],
   );
@@ -24,9 +33,8 @@ export default function ChallengesPage() {
     location.state !== null &&
     "challengeId" in location.state &&
     typeof location.state.challengeId === "number" &&
-    sustainableChallenges.some(
-      (challenge) => challenge.id === location.state.challengeId,
-    )
+    Number.isSafeInteger(location.state.challengeId) &&
+    location.state.challengeId > 0
       ? location.state.challengeId
       : null;
   const { user: account, errorMessage: accountNotice } = useAuth();
@@ -46,12 +54,9 @@ export default function ChallengesPage() {
 
   useEffect(() => {
     try {
-      setChallenges(getLocalChallenges());
       setActions(getLocalActions());
-      setCompletedIds(getCompletedChallengeIds(account?.id ?? null));
-      setLocalPoints(
-        getChallengePoints(getCompletedChallengeIds(account?.id ?? null)),
-      );
+      setCompletedIds(getCompletedApiChallengeIds(account?.id ?? null));
+      setLocalPoints(account ? getApprovedActionPoints(account.id) : 0);
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -62,11 +67,13 @@ export default function ChallengesPage() {
   }, [account]);
 
   const selectedChallenge = challenges.find(
-    (challenge) => challenge.id === selectedId && challenge.active !== false,
+    (challenge) => challenge.id === selectedId,
   );
   const submittedAction = actions.find(
     (action) =>
-      action.userId === account?.id && action.challengeId === selectedId,
+      action.userId === account?.id &&
+      action.challengeId === selectedId &&
+      action.challengeSource === "java",
   );
 
   const selectEvidence = (event: ChangeEvent<HTMLInputElement>) => {
@@ -113,9 +120,10 @@ export default function ChallengesPage() {
           reject(new Error("Não foi possível ler a foto selecionada."));
         reader.readAsDataURL(evidence);
       });
-      publishLocalAction(
+      const currentChallenge = await getChallenge(selectedChallenge.id);
+      publishApiChallengeAction(
         account,
-        selectedChallenge.id,
+        currentChallenge,
         evidenceDescription,
         image,
       );
@@ -146,10 +154,19 @@ export default function ChallengesPage() {
         description="Escolha uma atividade, descreva sua ação e envie uma foto como evidência. Os pontos são liberados após a aprovação de um funcionário."
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {challenges
-          .filter((challenge) => challenge.active !== false)
-          .map((challenge) => {
+      <RequestFeedback
+        loading={loading}
+        error={catalogError}
+        empty={
+          !challenges.length
+            ? "Nenhum desafio cadastrado na API Java."
+            : undefined
+        }
+        onRetry={reload}
+      />
+      {!loading && !catalogError && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {challenges.map((challenge) => {
             const isSelected = selectedId === challenge.id;
             const isComplete = completedIds.includes(challenge.id);
             return (
@@ -175,41 +192,45 @@ export default function ChallengesPage() {
                   ID: {challenge.id} | {isComplete ? "Concluído" : "Ativo"}
                 </span>
                 <span className="mt-2 block text-lg font-bold text-white">
-                  {challenge.category}
+                  {challenge.titulo}
+                </span>
+                <span className="mt-1 block text-xs text-leaf">
+                  {challenge.categoria}
                 </span>
                 <span className="mt-1 block text-sm leading-6 text-mint">
-                  {challenge.description}
+                  {challenge.descricao}
                 </span>
                 <span className="mt-4 block font-semibold text-leaf">
-                  {challenge.points} pontos
+                  {challenge.pontos} pontos
                 </span>
               </button>
             );
           })}
-      </div>
+        </div>
+      )}
       {accountNotice && (
         <p role="status" className="mt-5 text-sm text-muted">
           {accountNotice} Entre na sua conta para publicar ações.
         </p>
       )}
 
-      {selectedChallenge && (
+      {!loading && !catalogError && selectedChallenge && (
         <section
           className="mt-8 rounded-3xl border border-leaf/25 bg-forest-soft p-6 sm:p-8"
           aria-live="polite"
         >
-          <div className="flex items-start justify-between gap-5">
+          <div className="flex flex-wrap items-start justify-between gap-5">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-leaf">
                 Desafio selecionado · ID {selectedChallenge.id}
               </p>
               <h2 className="mt-2 text-2xl font-bold text-white">
-                {selectedChallenge.category}
+                {selectedChallenge.titulo}
               </h2>
-              <p className="mt-2 text-mint">{selectedChallenge.description}</p>
+              <p className="mt-2 text-mint">{selectedChallenge.descricao}</p>
             </div>
             <span className="shrink-0 rounded-full bg-leaf/10 px-4 py-2 text-sm font-bold text-leaf">
-              {selectedChallenge.points} pontos
+              {selectedChallenge.pontos} pontos
             </span>
           </div>
 
@@ -256,7 +277,9 @@ export default function ChallengesPage() {
         </section>
       )}
 
-      {selectedChallenge &&
+      {!loading &&
+        !catalogError &&
+        selectedChallenge &&
         startedChallengeId === selectedChallenge.id &&
         !completedIds.includes(selectedChallenge.id) &&
         !submittedAction && (
@@ -268,8 +291,8 @@ export default function ChallengesPage() {
               Envie a evidência
             </h2>
             <p className="mt-2 text-mint">
-              Quando concluir “{selectedChallenge.description}”, envie uma foto
-              e descreva a ação para análise.
+              Quando concluir “{selectedChallenge.descricao}”, envie uma foto e
+              descreva a ação para análise.
             </p>
             <form className="mt-7 space-y-5" onSubmit={submitChallenge}>
               <div>

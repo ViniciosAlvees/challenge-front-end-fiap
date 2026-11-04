@@ -2,10 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import SectionTitle from "../components/SectionTitle";
 import { useAuth } from "../contexts/AuthContext";
-import {
-  getCompletedChallengeIds,
-  getChallengePoints,
-} from "../services/challenges";
+import { getApprovedActionPoints } from "../services/challenges";
 
 export default function ProfilePage() {
   const { user, isLoading, errorMessage } = useAuth();
@@ -17,7 +14,7 @@ export default function ProfilePage() {
       return;
     }
     try {
-      setLocalPoints(getChallengePoints(getCompletedChallengeIds(user.id)));
+      setLocalPoints(getApprovedActionPoints(user.id));
       setProgressError("");
     } catch {
       setProgressError(

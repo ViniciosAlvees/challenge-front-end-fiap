@@ -15,6 +15,12 @@ import {
   createGroup,
   deleteUser,
   deleteGroup,
+  createUser,
+  updateUser,
+  createChallenge,
+  updateChallenge,
+  deleteChallenge,
+  parseApiUser,
 } from "../src/services/api.ts";
 
 const originalFetch = globalThis.fetch;
@@ -90,7 +96,7 @@ test("successful login must also be confirmed by the server session endpoint", a
   assert.equal(calls[1].url, "http://localhost:5173/api/auth/me");
 });
 
-test("Python handles account registration, challenges and logout independently of Java records", async () => {
+test("Python account session stays independent from Java users and challenge catalog", async () => {
   const account = { ...user, id: 42 };
   mock([
     { body: account },
@@ -119,7 +125,7 @@ test("Python handles account registration, challenges and logout independently o
       "/api/auth/login",
       "/api/auth/me",
       "/api/java/usuarios",
-      "/api/desafios",
+      "/api/java/desafios",
       "/api/auth/logout",
     ],
   );
@@ -182,10 +188,164 @@ test("group creation sends selected members and verifies a real identifier", asy
   assert.equal(calls[0].credentials, "omit");
 });
 test("deletion follows the Java query parameter contract", async () => {
-  mock([{ status: 204 }, { status: 204 }]);
+  mock([{ status: 204 }, { status: 204 }, { status: 204 }]);
   await deleteUser(1);
   await deleteGroup(7);
+  await deleteChallenge(9);
   assert.equal(calls[0].url, "http://localhost:5173/api/java/usuarios?id=1");
   assert.equal(calls[1].url, "http://localhost:5173/api/java/grupos?id=7");
+  assert.equal(calls[2].url, "http://localhost:5173/api/java/desafios?id=9");
   assert.ok(calls.every((call) => call.method === "DELETE"));
+});
+
+test("accepts Java user score names without losing accumulated points", () => {
+  assert.equal(
+    parseApiUser({ ...user, pontosAcumulados: 230 }).pontosAdquiridos,
+    230,
+  );
+  assert.equal(
+    parseApiUser({ ...user, pontos_acumulados: 120 }).pontosAdquiridos,
+    120,
+  );
+});
+
+test("Java user creation sends credentials once and verifies the persisted user", async () => {
+  mock([{ status: 201, body: user }, { body: [user] }]);
+  assert.deepEqual(
+    await createUser({
+      nome: " Ana ",
+      email: " ANA@example.test ",
+      senha: "correct-password",
+    }),
+    user,
+  );
+  assert.equal(calls[0].url, "http://localhost:5173/api/java/usuarios");
+  assert.equal(calls[0].method, "POST");
+  assert.deepEqual(JSON.parse(calls[0].body), {
+    nome: "Ana",
+    email: user.email,
+    senha: "correct-password",
+  });
+  assert.equal(calls[1].method, undefined);
+  assert.equal(getStoredAccount(), null);
+});
+
+test("Java user update uses collection PUT and confirms real data instead of echoed success", async () => {
+  const updated = { ...user, nome: "Ana Nova" };
+  mock([{ body: updated }, { body: [updated] }]);
+  assert.deepEqual(
+    await updateUser(1, { nome: updated.nome, email: updated.email }),
+    updated,
+  );
+  assert.equal(calls[0].url, "http://localhost:5173/api/java/usuarios");
+  assert.equal(calls[0].method, "PUT");
+  assert.deepEqual(JSON.parse(calls[0].body), {
+    id: 1,
+    nome: updated.nome,
+    email: updated.email,
+  });
+  mock([{ body: updated }, { body: [user] }]);
+  await assert.rejects(updateUser(1, updated), /alteração não foi confirmada/);
+});
+
+const challenge = {
+  id: 9,
+  titulo: "Reciclagem Básica",
+  descricao: "Separar os resíduos",
+  pontos: 50,
+  categoria: "Reciclagem",
+};
+const { id: challengeId, ...challengeFields } = challenge;
+
+test("challenge creation resolves the ID from persisted Java data when POST returns zero", async () => {
+  mock([
+    { body: [] },
+    { status: 201, body: { ...challenge, id: 0 } },
+    { body: [challenge] },
+  ]);
+  assert.deepEqual(await createChallenge(challengeFields), challenge);
+  assert.deepEqual(
+    calls.map((call) => call.method ?? "GET"),
+    ["GET", "POST", "GET"],
+  );
+  assert.ok(
+    calls.every(
+      (call) => call.url === "http://localhost:5173/api/java/desafios",
+    ),
+  );
+  assert.deepEqual(JSON.parse(calls[1].body), challengeFields);
+});
+
+test("challenge creation never fabricates an ID or repeats POST when persistence is uncertain", async () => {
+  for (const persisted of [[], [challenge, { ...challenge, id: 10 }]]) {
+    calls = [];
+    mock([
+      { body: [] },
+      { status: 201, body: { ...challenge, id: 0 } },
+      { body: persisted },
+    ]);
+    await assert.rejects(
+      createChallenge(challengeFields),
+      /Consulte a lista antes de repetir/,
+    );
+    assert.equal(calls.filter((call) => call.method === "POST").length, 1);
+  }
+});
+
+test("unavailable challenge catalog prevents POST and invalid forms never make requests", async () => {
+  mock([{ status: 503, body: {} }]);
+  await assert.rejects(
+    createChallenge(challengeFields),
+    (error) => error.status === 503,
+  );
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].method, undefined);
+  calls = [];
+  for (const pontos of [0, -1, 1.5, NaN])
+    await assert.rejects(
+      createChallenge({ ...challengeFields, pontos }),
+      /pontos inteiros/,
+    );
+  await assert.rejects(
+    createUser({ nome: " ", email: user.email, senha: "correct-password" }),
+  );
+  assert.equal(calls.length, 0);
+});
+
+test("challenge PUT includes its ID and success requires matching persisted fields", async () => {
+  const updated = { ...challenge, pontos: 80 };
+  mock([{ body: updated }, { body: [updated] }]);
+  assert.deepEqual(await updateChallenge(challengeId, updated), updated);
+  assert.equal(calls[0].method, "PUT");
+  assert.equal(calls[0].url, "http://localhost:5173/api/java/desafios");
+  assert.deepEqual(JSON.parse(calls[0].body), updated);
+  mock([{ body: updated }, { body: [challenge] }]);
+  await assert.rejects(
+    updateChallenge(challengeId, updated),
+    /alteração do desafio não foi confirmada/,
+  );
+});
+
+test("Java challenge responses require title, valid ID and integer points", async () => {
+  for (const value of [
+    { ...challenge, titulo: undefined },
+    { ...challenge, id: 0 },
+    { ...challenge, pontos: 1.2 },
+  ]) {
+    mock([{ body: [value] }]);
+    await assert.rejects(listChallenges());
+  }
+});
+
+test("follow-up GET failures clearly warn that POST may already have persisted", async () => {
+  mock([
+    { body: [] },
+    { status: 201, body: { ...challenge, id: 0 } },
+    { status: 503, body: {} },
+  ]);
+  await assert.rejects(
+    createChallenge(challengeFields),
+    /Não repita a operação antes de atualizar/,
+  );
+  assert.equal(calls.filter((call) => call.method === "POST").length, 1);
 });

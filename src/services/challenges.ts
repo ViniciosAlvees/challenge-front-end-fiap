@@ -1,4 +1,4 @@
-import type { AccountUser } from "./api";
+import type { AccountUser, ApiChallenge } from "./api";
 
 export type SustainableChallenge = {
   id: number;
@@ -57,6 +57,7 @@ export type LocalAction = {
   userName: string;
   userEmail: string;
   challengeId: number;
+  challengeSource?: "java";
   description: string;
   evidence: string;
   evidenceImage?: string;
@@ -154,6 +155,8 @@ export function getLocalActions(): LocalAction[] {
         Number.isSafeInteger(item.id) &&
         Number.isSafeInteger(item.userId) &&
         Number.isSafeInteger(item.challengeId) &&
+        (item.challengeSource === undefined ||
+          item.challengeSource === "java") &&
         typeof item.userName === "string" &&
         typeof item.userEmail === "string" &&
         typeof item.description === "string" &&
@@ -161,7 +164,7 @@ export function getLocalActions(): LocalAction[] {
         typeof item.opinion === "string" &&
         typeof item.createdAt === "string" &&
         Number.isInteger(item.points) &&
-        item.points > 0 &&
+        item.points >= 0 &&
         ["pendente", "aprovada", "rejeitada"].includes(item.status),
     )
   ) {
@@ -180,6 +183,35 @@ export function publishLocalAction(
     (item) => item.id === challengeId && item.active,
   );
   if (!challenge) throw new Error("Desafio ativo não encontrado.");
+  return saveLocalAction(account, challenge, evidence, evidenceImage);
+}
+
+export function publishApiChallengeAction(
+  account: AccountUser,
+  challenge: ApiChallenge,
+  evidence: string,
+  evidenceImage?: string,
+) {
+  return saveLocalAction(
+    account,
+    {
+      id: challenge.id,
+      description: `${challenge.titulo}: ${challenge.descricao}`,
+      points: challenge.pontos,
+    },
+    evidence,
+    evidenceImage,
+    "java",
+  );
+}
+
+function saveLocalAction(
+  account: AccountUser,
+  challenge: Pick<SustainableChallenge, "id" | "description" | "points">,
+  evidence: string,
+  evidenceImage?: string,
+  source?: "java",
+) {
   if (evidence.trim().length < 5)
     throw new Error("Descreva a evidência com pelo menos 5 caracteres.");
   if (
@@ -193,7 +225,9 @@ export function publishLocalAction(
   if (
     actions.some(
       (action) =>
-        action.userId === account.id && action.challengeId === challengeId,
+        action.userId === account.id &&
+        action.challengeId === challenge.id &&
+        action.challengeSource === source,
     )
   ) {
     throw new Error("Você já enviou uma ação para este desafio.");
@@ -203,7 +237,8 @@ export function publishLocalAction(
     userId: account.id,
     userName: account.nome,
     userEmail: account.email,
-    challengeId,
+    challengeId: challenge.id,
+    ...(source ? { challengeSource: source } : {}),
     description: challenge.description,
     evidence: evidence.trim(),
     evidenceImage,
@@ -293,4 +328,23 @@ export function getChallengePoints(completedIds: number[]): number {
       completedIds.includes(challenge.id) ? total + challenge.points : total,
     0,
   );
+}
+
+export function getApprovedActionPoints(userId: number): number {
+  return getLocalActions()
+    .filter(
+      (action) => action.userId === userId && action.status === "aprovada",
+    )
+    .reduce((total, action) => total + action.points, 0);
+}
+
+export function getCompletedApiChallengeIds(userId: number | null): number[] {
+  return getLocalActions()
+    .filter(
+      (action) =>
+        action.userId === userId &&
+        action.challengeSource === "java" &&
+        action.status === "aprovada",
+    )
+    .map((action) => action.challengeId);
 }
