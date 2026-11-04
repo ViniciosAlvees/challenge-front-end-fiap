@@ -1,24 +1,43 @@
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import {
+  createHmac,
+  randomBytes,
+  scryptSync,
+  timingSafeEqual,
+} from "node:crypto";
 
 const cookieName = "soulup_employee";
 const sessionDuration = 8 * 60 * 60;
 const password = process.env.EMPLOYEE_PASSWORD || "123456789";
 const signingKey = scryptSync(password, "soul-up:employee-session:v1", 32);
-const passwordDigest = createHmac("sha256", signingKey).update(password).digest();
+const passwordDigest = createHmac("sha256", signingKey)
+  .update(password)
+  .digest();
 
 function sign(value) {
   return createHmac("sha256", signingKey).update(value).digest("base64url");
 }
 
 function authenticated(req) {
-  const cookie = (req.headers.cookie || "").split(";").map((part) => part.trim())
-    .find((part) => part.startsWith(`${cookieName}=`))?.slice(cookieName.length + 1);
+  const cookie = (req.headers.cookie || "")
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${cookieName}=`))
+    ?.slice(cookieName.length + 1);
   if (!cookie) return false;
   const [expires, nonce, signature, extra] = cookie.split(".");
-  if (!expires || !nonce || !signature || extra || Number(expires) <= Date.now()) return false;
+  if (
+    !expires ||
+    !nonce ||
+    !signature ||
+    extra ||
+    Number(expires) <= Date.now()
+  )
+    return false;
   const expected = Buffer.from(sign(`${expires}.${nonce}`));
   const received = Buffer.from(signature);
-  return received.length === expected.length && timingSafeEqual(received, expected);
+  return (
+    received.length === expected.length && timingSafeEqual(received, expected)
+  );
 }
 
 function send(res, status, body) {
@@ -29,8 +48,12 @@ function send(res, status, body) {
 }
 
 function setCookie(req, res, value, age) {
-  const secure = req.headers["x-forwarded-proto"] === "https" || req.socket?.encrypted;
-  res.setHeader("Set-Cookie", `${cookieName}=${value}; HttpOnly; SameSite=Strict; Path=/api/acesso-funcionario; Max-Age=${age}${secure ? "; Secure" : ""}`);
+  const secure =
+    req.headers["x-forwarded-proto"] === "https" || req.socket?.encrypted;
+  res.setHeader(
+    "Set-Cookie",
+    `${cookieName}=${value}; HttpOnly; SameSite=Strict; Path=/api/acesso-funcionario; Max-Age=${age}${secure ? "; Secure" : ""}`,
+  );
 }
 
 export default async function employeeAccess(req, res) {
@@ -52,14 +75,17 @@ export default async function employeeAccess(req, res) {
         let raw = "";
         for await (const chunk of req) {
           raw += chunk;
-          if (raw.length > 4096) return send(res, 413, { message: "Requisição muito grande." });
+          if (raw.length > 4096)
+            return send(res, 413, { message: "Requisição muito grande." });
         }
         body = JSON.parse(raw);
       } else if (typeof body === "string") {
         body = JSON.parse(body);
       }
       const candidate = typeof body?.senha === "string" ? body.senha : "";
-      const digest = createHmac("sha256", signingKey).update(candidate).digest();
+      const digest = createHmac("sha256", signingKey)
+        .update(candidate)
+        .digest();
       if (!timingSafeEqual(digest, passwordDigest)) {
         setCookie(req, res, "", 0);
         return send(res, 401, { message: "Senha incorreta. Tente novamente." });
@@ -78,23 +104,64 @@ export default async function employeeAccess(req, res) {
       res.setHeader("Allow", "GET, POST, DELETE");
       return send(res, 405, { message: "Método não permitido." });
     }
-    if (!authenticated(req)) return send(res, 401, { message: "Informe a senha de funcionário para continuar." });
+    if (!authenticated(req))
+      return send(res, 401, {
+        message: "Informe a senha de funcionário para continuar.",
+      });
 
     const url = new URL(req.url, "http://localhost");
     if (url.searchParams.get("recurso") === "usuarios") {
-      const base = (process.env.SOULUP_JAVA_API_URL || process.env.SOULUP_API_URL || "https://challeng-sprin4-java.onrender.com").replace(/\/$/, "");
-      const response = await fetch(`${base}/usuarios`, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(45000) });
-      if (!response.ok) return send(res, 502, { message: `A API de usuários retornou HTTP ${response.status}.` });
+      const base = (
+        process.env.SOULUP_JAVA_API_URL ||
+        process.env.SOULUP_API_URL ||
+        "https://challeng-sprin4-java.onrender.com"
+      ).replace(/\/$/, "");
+      const response = await fetch(`${base}/usuarios`, {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(45000),
+      });
+      if (!response.ok)
+        return send(res, 502, {
+          message: `A API de usuários retornou HTTP ${response.status}.`,
+        });
       const users = await response.json();
-      if (!Array.isArray(users) || users.some((user) => !user || typeof user !== "object")) {
-        return send(res, 502, { message: "A API não retornou uma lista de usuários válida." });
+      if (
+        !Array.isArray(users) ||
+        users.some((user) => {
+          if (!user || typeof user !== "object" || Array.isArray(user))
+            return true;
+          const id = user.id ?? user.id_usuario;
+          return (
+            !Number.isSafeInteger(id) ||
+            id <= 0 ||
+            typeof user.nome !== "string" ||
+            !user.nome.trim() ||
+            typeof user.email !== "string" ||
+            !user.email.trim()
+          );
+        })
+      ) {
+        return send(res, 502, {
+          message: "A API não retornou uma lista de usuários válida.",
+        });
       }
-      return send(res, 200, users.map((user, index) => ({ id: user.id ?? user.id_usuario ?? index + 1, nome: user.nome || "Usuário sem nome", email: user.email || "Sem e-mail" })));
+      return send(
+        res,
+        200,
+        users.map((user) => ({
+          id: user.id ?? user.id_usuario,
+          nome: user.nome,
+          email: user.email,
+        })),
+      );
     }
     return send(res, 200, { authenticated: true });
   } catch (error) {
     return send(res, error instanceof SyntaxError ? 400 : 502, {
-      message: error instanceof SyntaxError ? "Requisição inválida." : "Não foi possível consultar o serviço. Tente novamente.",
+      message:
+        error instanceof SyntaxError
+          ? "Requisição inválida."
+          : "Não foi possível consultar o serviço. Tente novamente.",
     });
   }
 }

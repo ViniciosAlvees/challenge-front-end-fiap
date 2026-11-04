@@ -13,7 +13,11 @@ before(async () => {
 after(() => new Promise((resolve) => server.close(resolve)));
 
 async function login(senha) {
-  return fetch(base, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ senha }) });
+  return fetch(base, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ senha }),
+  });
 }
 
 test("anonymous access and API user listing require a valid employee session", async () => {
@@ -36,9 +40,15 @@ test("the exact requested password creates an HttpOnly session that survives ref
   assert.match(cookie, /HttpOnly/);
   assert.match(cookie, /SameSite=Strict/);
   assert.match(cookie, /Max-Age=28800/);
-  assert.equal((await fetch(base, { headers: { Cookie: cookie.split(";")[0] } })).status, 200);
+  assert.equal(
+    (await fetch(base, { headers: { Cookie: cookie.split(";")[0] } })).status,
+    200,
+  );
   const tampered = `${cookie.split(";")[0]}tampered`;
-  assert.equal((await fetch(base, { headers: { Cookie: tampered } })).status, 401);
+  assert.equal(
+    (await fetch(base, { headers: { Cookie: tampered } })).status,
+    401,
+  );
 });
 
 test("logout expires the session cookie", async () => {
@@ -47,8 +57,65 @@ test("logout expires the session cookie", async () => {
   assert.match(response.headers.get("set-cookie"), /Max-Age=0/);
 });
 
+test("employee user listing rejects invalid records instead of inventing IDs or profile data", async () => {
+  const response = await login("123456789");
+  const cookie = response.headers.get("set-cookie").split(";")[0];
+  const originalFetch = globalThis.fetch;
+  try {
+    for (const records of [
+      [{ nome: "Sem ID", email: "test@example.com" }],
+      [{ id: 1, nome: "", email: "test@example.com" }],
+      [{ id: 1, nome: "Teste" }],
+      [{ id: -1, nome: "Teste", email: "test@example.com" }],
+    ]) {
+      globalThis.fetch = async (url, options) =>
+        String(url).startsWith(base)
+          ? originalFetch(url, options)
+          : Response.json(records);
+      const result = await originalFetch(`${base}?recurso=usuarios`, {
+        headers: { Cookie: cookie },
+      });
+      assert.equal(result.status, 502);
+    }
+    globalThis.fetch = async () =>
+      Response.json([
+        { id_usuario: 42, nome: "Teste", email: "test@example.com" },
+      ]);
+    const result = await originalFetch(`${base}?recurso=usuarios`, {
+      headers: { Cookie: cookie },
+    });
+    assert.equal(result.status, 200);
+    assert.deepEqual(await result.json(), [
+      { id: 42, nome: "Teste", email: "test@example.com" },
+    ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("rejects cross-origin login, malformed JSON, and unsupported methods", async () => {
-  assert.equal((await fetch(base, { method: "POST", headers: { Origin: "https://other.example", "Content-Type": "application/json" }, body: JSON.stringify({ senha: "123456789" }) })).status, 403);
-  assert.equal((await fetch(base, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{" })).status, 400);
+  assert.equal(
+    (
+      await fetch(base, {
+        method: "POST",
+        headers: {
+          Origin: "https://other.example",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ senha: "123456789" }),
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await fetch(base, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{",
+      })
+    ).status,
+    400,
+  );
   assert.equal((await fetch(base, { method: "PUT" })).status, 405);
 });
