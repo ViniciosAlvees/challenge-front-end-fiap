@@ -24,8 +24,16 @@ const employeeApi = {
 export default defineConfig(({ mode }) => {
   const environment = loadEnv(mode, process.cwd(), "");
   // O middleware de funcionários também usa a configuração do servidor.
-  const pythonApiUrl = process.env.SOULUP_PYTHON_API_URL || environment.SOULUP_PYTHON_API_URL || "https://soulup-api-python.onrender.com";
-  const javaApiUrl = process.env.SOULUP_JAVA_API_URL || environment.SOULUP_JAVA_API_URL || process.env.SOULUP_API_URL || environment.SOULUP_API_URL || "https://challeng-sprin4-java.onrender.com";
+  const pythonApiUrl =
+    process.env.SOULUP_PYTHON_API_URL ||
+    environment.SOULUP_PYTHON_API_URL ||
+    "https://soulup-api-python.onrender.com";
+  const javaApiUrl =
+    process.env.SOULUP_JAVA_API_URL ||
+    environment.SOULUP_JAVA_API_URL ||
+    process.env.SOULUP_API_URL ||
+    environment.SOULUP_API_URL ||
+    "https://challeng-sprin4-java.onrender.com";
   process.env.SOULUP_JAVA_API_URL = javaApiUrl;
   const proxy = {
     "/api/java": {
