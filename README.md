@@ -24,10 +24,10 @@ A Soul Up conecta pessoas a ações ambientais por meio de desafios, grupos e re
 | Repositório Java | [challeng-sprin4-Java](https://github.com/velascoguzmanvictorhugo-ui/challeng-sprin4-Java) |
 | API Java publicada | [API Soul Up](https://challeng-sprin4-java.onrender.com) |
 | API Python publicada | [API Python Soul Up](https://soulup-api-python.onrender.com) |
-| Deploy na Vercel | **Pendente: inserir a URL real após a publicação e os testes online.** |
+| Deploy na Vercel | [Soul Up](https://soul-up-plum.vercel.app) |
 | Vídeo no YouTube | **Pendente: gravar a demonstração de até 3 minutos e inserir o link acessível.** |
 
-Os dois últimos itens ainda são pendências da entrega; não representam links já publicados.
+O vídeo ainda é uma pendência da entrega. O frontend foi publicado na Vercel pelo CLI a partir dos arquivos locais; os próximos envios ao GitHub não geram deploy automático nessa configuração.
 
 ### Instalação e execução
 
