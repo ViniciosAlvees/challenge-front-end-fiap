@@ -23,7 +23,7 @@ Valores do enunciado; não somar como previsão de nota. A inacessibilidade do r
 | 89 | ZIP corrompido, vazio ou impossível de abrir | −20 pontos | ZIP aberto e extraído em pasta limpa; instalação, testes e build executados na extração. |
 | 89 | Enviar pasta node_modules | −10 pontos | Excluída do ZIP; conteúdo conferido. Não compactar a pasta inteira manualmente. |
 | 89 | Faltarem arquivos essenciais | −15 pontos | Incluídos src, public, package.json, lockfile, configurações, README, servidor e função. Tailwind 4 configurado no Vite e CSS de entrada. |
-| 89 | Não executar após instalar dependências | −20 pontos | npm ci, 20 testes e build passaram na extração. Preview local funcionou. Recursos remotos dependem das APIs. |
+| 89 | Não executar após instalar dependências | −20 pontos | npm ci, testes e build passaram na extração. Preview local funcionou. Recursos remotos dependem das APIs. |
 | 89 | Repositório privado/inacessível para conferir histórico | −10 pontos | Equipe e fork responderam HTTP 200 sem autenticação. Manter públicos. |
 | 89 | Entrega por canal não autorizado | −10 pontos | Equipe deve usar exclusivamente o Portal do Aluno. |
 | 90 | Repositório privado/inacessível na correção | −10 pontos | Público em 04/11/2026; acesso futuro precisa ser mantido. |
@@ -47,7 +47,7 @@ Valores do enunciado; não somar como previsão de nota. A inacessibilidade do r
 | Duas páginas extras da solução | Solução, Avatar, Desafios e Grupos acessíveis pelo menu | Presentes |
 | Integrantes | Nome, foto, RM, turma, LinkedIn e GitHub dos cinco | Presentes; exatidão pessoal depende da equipe |
 | Vercel pública | Home e acesso direto a /grupos responderam HTTP 200 sem login | Site público; dados Java indisponíveis |
-| API Java: listagem, detalhe e escrita | Serviços /api/java; GET e POST/DELETE implementados | **Pendente online** |
+| API Java: listagem, detalhe e escrita | Serviços /api/java; CRUD de usuários/desafios e cadastro/listagem/exclusão de grupos implementados | **Pendente online** |
 | Camada HTTP, tipos e feedback | Serviços organizados; loading, erro e vazio separados | Conferido no código e em simulação no navegador |
 | README | Título, tecnologias, estrutura, autores, fotos/marca, instalação, contato, GitHub, API e Vercel | Vídeo pendente |
 | Git/GitFlow | Branches, merges e participação dos cinco integrantes | Ressalva sobre relevância dos commits de Bryan |
@@ -57,12 +57,28 @@ Valores do enunciado; não somar como previsão de nota. A inacessibilidade do r
 - Código React, TypeScript, serviços, servidor e testes formatados com Prettier em pasta temporária, sem adicionar dependência ao projeto.
 - Corrigida a sobreposição de “Comunidade” sobre “Sustentabilidade” na Home mobile; captura atualizada inspecionada.
 - Removidos IDs, nomes e e-mails artificiais da consulta de usuários no servidor de funcionários. Dados inválidos recebem HTTP 502, com teste de regressão.
-- **20 testes e build passaram**, inclusive após npm ci em cópia limpa extraída do ZIP.
+- A revisão inicial passou com 20 testes; a adequação posterior ao CRUD passou com **30 testes e build**. O ZIP também foi verificado por instalação limpa, testes e build.
 - Preview local verificado no navegador. Menu abriu, fechou e respondeu a Escape. Contato rejeitou quatro campos vazios e validou entrada completa; continua demonstrativo, conforme informado na interface.
 - Navegador com respostas simuladas verificou listagem, detalhe, inexistente, POST de grupo, nova consulta, vazio e erro 503. **Simulação não comprova persistência remota.**
 - Python respondeu 200 em / e /desafios; /auth/me sem credenciais respondeu 401 esperado. Cadastro/login/logout reais não foram certificados com conta online nesta revisão.
-- Desafios, evidências e ranking locais são prototipação no navegador; não substituem Java. Contas Python e usuários Java são independentes.
+- O catálogo de desafios e as operações de gestão usam Java. Evidências, pareceres e ranking continuam como prototipação no navegador. Contas Python e usuários Java são independentes.
 - Persistência de membros e migrações Oracle não certificadas. O patch Java existente não foi aplicado em produção nesta revisão.
+
+## Adequação aos módulos das imagens
+
+As três imagens recebidas depois da revisão inicial foram usadas como checklist adicional. O frontend agora oferece:
+
+- **Usuários Java:** cadastro administrativo com nome/e-mail/senha; listagem; edição de nome/e-mail; exclusão; leitura dos aliases de pontos acumulados.
+- **Grupos Java:** cadastro, listagem, detalhe e exclusão, preservando os membros quando suportados pelo backend.
+- **Desafios Java:** cadastro com título/descrição/pontos/categoria, listagem na página pública e no painel, edição e exclusão.
+
+Os controllers foram conferidos no commit Java `e51f5dbcd2310d8cc912f0345fe4f1c2e93167c4`. O contrato real usa PUT na coleção com ID no JSON e DELETE com `?id=...`; as URLs `/{id}` das imagens não existem nesse código. O frontend segue o contrato real, sem repetir operações em URLs alternativas.
+
+O PUT de usuário atual não implementa troca de senha nem edição de saldo; esses controles não são oferecidos. O cadastro/login público Python permanece separado do cadastro administrativo Java, sem replicação automática de senhas ou IDs.
+
+Os testes verificam os JSONs, métodos HTTP, confirmação por consulta e ausência de IDs inventados. No navegador, com respostas Java simuladas, passaram cadastro/edição/exclusão de usuários/desafios, cadastro/exclusão de grupos, validação, cancelamento de exclusão, atualização da página pública, erro e lista vazia, sem rolagem horizontal em 375/480/768/992/1440 px. Também passou o fluxo de catálogo Java simulado → evidência local → aprovação local → pontos no perfil, preservando os pontos da evidência quando o catálogo muda.
+
+Na consulta online posterior, `/usuarios`, `/grupos` e `/desafios` Java excederam o limite de 45 segundos. A simulação comprova o comportamento do frontend, mas **não certifica persistência no banco remoto**. O responsável pelo backend deve concluir essa validação antes da entrega.
 
 ## Histórico individual na base revisada 62482b4
 

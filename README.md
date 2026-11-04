@@ -68,9 +68,9 @@ npm run check:api
 - **Solução e Avatar:** conteúdo e prototipação navegável da proposta, com detalhes em `/solucao/:slug`.
 - **Grupos:** listagem real da API em `/grupos`, detalhe em `/grupos/:id` e cadastro em `/grupos/novo`. O cadastro envia os IDs dos participantes e consulta novamente a API para verificar os vínculos.
 - **Conta e Perfil:** cadastro e autenticação por senha. O login somente é aceito quando `/auth/login` e `/auth/me` confirmam a sessão; não existe entrada apenas por e-mail nem autenticação pelo armazenamento do navegador.
-- **Acesso Funcionário:** consulta de usuários e seus detalhes, criação e ativação local de desafios, consulta e análise local de ações e ranking local. A senha inicial solicitada é `123456789`. Leia [FUNCIONARIOS.md](./FUNCIONARIOS.md).
-- **Gestão da API:** acessível a partir da área de funcionários; apresenta usuários, grupos e desafios e confirma exclusões consultando o servidor novamente.
-- **Desafios:** participação com descrição e foto local, sujeita à aprovação de funcionário. Os pontos locais e os pontos da API são apresentados separadamente no perfil.
+- **Acesso Funcionário:** consulta de usuários e seus detalhes, cadastro/edição/exclusão de desafios na API Java, consulta e análise local de ações e ranking local. A senha inicial solicitada é `123456789`. Leia [FUNCIONARIOS.md](./FUNCIONARIOS.md).
+- **Gestão da API:** cadastro, listagem, edição de nome/e-mail e exclusão de usuários Java; listagem e exclusão de grupos, com acesso ao formulário de cadastro; cadastro, listagem, edição e exclusão de desafios Java. Toda escrita é confirmada por nova consulta, e exclusões exigem confirmação do usuário.
+- **Desafios:** catálogo consultado na API Java com título, descrição, categoria e pontos. Participação com descrição e foto local, sujeita à aprovação de funcionário. Os pontos locais e os pontos da API são apresentados separadamente no perfil.
 - **Contato:** formulário demonstrativo com validação, sem envio de mensagens.
 
 ### Integração Python e Java
@@ -78,13 +78,17 @@ npm run check:api
 | Operação | API |
 |---|---|
 | Cadastro de conta (`POST /usuarios`), login, sessão e logout (`/auth/*`) | Python |
-| Listagem, detalhes e exclusão de usuários (`/usuarios`) | Java |
+| Cadastro de usuário administrativo, listagem, detalhes, edição e exclusão (`/usuarios`) | Java |
 | Listagem, detalhes, criação e exclusão de grupos (`/grupos`) | Java |
-| Consulta de desafios na gestão (`GET /desafios`) | Python |
+| Catálogo de desafios na página principal e gestão: GET, POST, PUT e DELETE (`/desafios`) | Java |
 
 As contas autenticadas pelo Python e os usuários retornados pelo Java pertencem aos respectivos backends. O frontend não replica contas, senhas, IDs ou exclusões entre os bancos. Os membros de grupos são selecionados exclusivamente da listagem Java; o ID da sessão Python não é usado como ID de usuário Java. Para compartilhar cadastros entre os serviços, os backends precisam implementar essa sincronização.
 
-O código Java consultado na branch `main`, commit `107b64c689ccd649fc51350d87daf0e4f90bbde5`, oferece listagens em `GET /usuarios`, `GET /grupos` e `GET /desafios`; escrita com `POST /usuarios` e `POST /grupos`; exclusão com `DELETE /usuarios?id=...` e `DELETE /grupos?id=...`.
+O contrato foi conferido no Java em `main`, commit `e51f5dbcd2310d8cc912f0345fe4f1c2e93167c4`: `GET/POST /usuarios`, `PUT /usuarios` com `id`, `nome` e `email` no JSON; `GET/POST /grupos`; `GET/POST /desafios`, `PUT /desafios` com `id`, `titulo`, `descricao`, `pontos` e `categoria`. As exclusões usam `DELETE /usuarios?id=...`, `/grupos?id=...` e `/desafios?id=...`. Os exemplos das imagens com `/{id}` não correspondem aos controllers atuais; não há tentativa automática de repetir operações em outras URLs.
+
+O cadastro de usuário Java envia `nome`, `email` e `senha`. Pontos são lidos em `pontosAcumulados`, `pontos_acumulados` ou `pontosAdquiridos`. O PUT atual persiste nome/e-mail; alteração de senha e edição de saldo não são oferecidas porque o backend não implementa essas operações. A página **Conta** continua usando o Python para cadastro/login, sem copiar senhas ou criar uma segunda conta automaticamente.
+
+O POST de desafios no Java pode responder com `id: 0`, embora o banco tenha gerado outro ID. O frontend compara as listagens anterior e posterior e só confirma um único registro novo correspondente. Respostas ambíguas ou falhas de consulta exibem orientação para consultar a lista antes de repetir o cadastro.
 
 As telas de detalhe consultam os dados atuais das listagens e selecionam o registro pelo ID. Identificadores inválidos ou inexistentes têm feedback próprio. Respostas inválidas, falhas HTTP e listas vazias são tratadas separadamente, sem fabricar registros.
 
@@ -92,7 +96,9 @@ O pacote histórico em [backend-patches](./backend-patches/README.md) contém co
 
 No Render da API Python, configure `SOULUP_ORIGENS` com as origens permitidas, incluindo `http://localhost:5173` e a URL pública real do frontend, sem barra final e no formato aceito pelo backend. Essa alteração é feita no painel do Render. Com os proxies padrão, o navegador faz as requisições à própria origem do site; ao configurar URLs diretas em `VITE_*`, o backend correspondente precisa permitir CORS e cookies dessa origem.
 
-Desafios, fotos, pareceres e ranking local continuam armazenados neste navegador, sem sincronização automática com o SQLite do Python ou com outros dispositivos. Esses dados de demonstração não substituem a persistência e a autorização do backend. A API Java é usada para as listagens, detalhes e operações de escrita dos cadastros.
+No Java, configure `FRONTEND_ORIGINS` para incluir a origem publicada e as origens locais usadas. O filtro do cadastro verifica a origem das requisições mesmo quando o frontend usa proxy.
+
+O catálogo de desafios é persistido pelo Java. Fotos, evidências, pareceres e ranking de demonstração continuam neste navegador, sem sincronização entre dispositivos. A evidência guarda uma cópia da descrição/pontos consultados no Java; editar ou excluir o desafio depois não altera os pontos das ações já aprovadas. IDs dos antigos desafios locais não são tratados como IDs Java. Esses dados locais não substituem persistência e autorização no backend.
 
 ## Estrutura de pastas
 
@@ -106,6 +112,7 @@ src/
   assets/team/       # Fotos dos integrantes
   components/        # Layout, proteção e feedback reutilizáveis
   contexts/          # Sessão de usuário verificada no servidor
+  hooks/             # Carregamento reutilizável de listas da API
   data/              # Conteúdo e interfaces da equipe
   pages/             # Páginas da SPA
   services/          # Integração HTTP e regras locais tipadas
